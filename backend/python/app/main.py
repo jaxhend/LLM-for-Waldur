@@ -26,7 +26,7 @@ app = FastAPI(title="Waldur LLM Backend", version="0.1.0", description="Waldur L
 def health():
     return {"status": "ok"}
 
-@app.post("/api/v1/chat")
+@app.post("/api/v1/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
     if not req.messages:
         raise HTTPException(status_code=404, detail="messages required")
