@@ -31,14 +31,15 @@ def chat(req: ChatRequest):
     if not req.messages:
         raise HTTPException(status_code=404, detail="messages required")
     last_user = next((m.content for m in reversed(req.messages) if m.role == "user"), "")
-    return {
-        "id": "demo-1",
-        "model": "echo",
-        "created": int(__import__("time").time()),
-        "choices": [
+    return ChatResponse(
+        id ="demo-1",
+        model= "echo",
+        created= int(__import__("time").time()),
+        choices= [
             Choice(
                 index=0,
                 message=Message(role="assistant", content=f"Echo: {last_user}")
             )
-        ]
-    }
+        ],
+    )
+
