@@ -1,25 +1,12 @@
-from typing import Literal, List
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
-from fastapi.middleware.cors import CORSMiddleware
+import json
 
-Role = Literal["system", "user", "assistant", "tool"]
-class Message(BaseModel):
-    role: Role
-    content: str
+from fastapi import HTTPException, FastAPI
+from starlette.middleware.cors import CORSMiddleware
+from starlette.responses import StreamingResponse, JSONResponse
 
-class ChatRequest(BaseModel):
-    messages: List[Message] = Field(min_length=1, description="Conversation so far")
-
-class Choice(BaseModel):
-    index: int
-    message: Message
-
-class ChatResponse(BaseModel):
-    id: str
-    model: str
-    created: int
-    choices: List[Choice]
+from .config import settings
+from .schemas import ChatRequest, ChatChunk, ChatResponse
+from .services import llm_service
 
 app = FastAPI(title="Waldur LLM Backend", version="0.1.0", description="Waldur LLM Backend")
 
@@ -32,22 +19,35 @@ app.add_middleware(
 )
 
 @app.get("/api/health")
-def health():
-    return {"status": "ok"}
+async def health():
+    return {"status": "ok",
+            "provider": settings.default_provider,
+            "model": settings.model,}
 
-@app.post("/api/v1/chat", response_model=ChatResponse)
-def chat(req: ChatRequest):
-    if not req.messages:
-        raise HTTPException(status_code=404, detail="messages required")
-    last_user = next((m.content for m in reversed(req.messages) if m.role == "user"), "")
-    return ChatResponse(
-        id ="demo-1",
-        model= "echo",
-        created= int(__import__("time").time()),
-        choices= [
-            Choice(
-                index=0,
-                message=Message(role="assistant", content=f"Echo: {last_user}")
-            )
-        ],
-    )
+@app.post("/api/v1/chat")
+async def chat(req: ChatRequest):
+    try:
+        if req.stream:
+            async def event_source():
+                try:
+                    async for ch in llm_service.astream(req):
+                        yield f"data: {json.dumps(ChatChunk(**ch).model_dump())}\n\n"
+                except Exception as e:
+                    error_payload = {"id": "error", "model": settings.model, "delta": str(e), "done": True}
+                    yield f"data: {json.dumps(error_payload)}\n\n"
+            return StreamingResponse(event_source(), media_type="text/event-stream", headers= {
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+            })
+        else:
+            out = await llm_service.complete(req)
+            response = ChatResponse(**out)
+            return JSONResponse(response.model_dump())
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"LLM provider error: {e}")
+
+
+
+
