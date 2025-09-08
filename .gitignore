@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+
+# Logs and caches
+*.log
+*.tmp
+*.cache
+.DS_Store
+
+# Environment & credentials
+.env
+.env.*
+*.pem
+*.key
+*.crt
+
