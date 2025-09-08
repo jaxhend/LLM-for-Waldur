@@ -1,6 +1,7 @@
 from typing import Literal, List
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
+from fastapi.middleware.cors import CORSMiddleware
 
 Role = Literal["system", "user", "assistant", "tool"]
 class Message(BaseModel):
@@ -22,6 +23,14 @@ class ChatResponse(BaseModel):
 
 app = FastAPI(title="Waldur LLM Backend", version="0.1.0", description="Waldur LLM Backend")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
@@ -42,4 +51,3 @@ def chat(req: ChatRequest):
             )
         ],
     )
-
