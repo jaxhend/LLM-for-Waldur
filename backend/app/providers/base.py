@@ -6,13 +6,14 @@ class LLMProvider(ABC):
     name: str
 
     @abstractmethod
-    async def complete(self,
-                       *,
-                       messages:list[dict],
-                       model:str,
-                       temperature: float,
+    async def complete(
+                        self,
+                         *,
+                        messages:list[dict],
+                        model:str,
+                        temperature: float,
                         max_tokens: int | None,
-                       stream: bool
+                        stream: bool
                        ) -> Dict[str, Any]:
         """(if stream = False) returns dict with keys:
             {"model", "content", "finish_reason", "usage}
@@ -21,11 +22,13 @@ class LLMProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def astream(self,
-                      *,
-                      messages:list[dict],
-                      model:str,
-                      temperature: float,
-                      max_tokens: int | None) -> AsyncGenerator[Dict[str, Any], None]:
+    async def astream(
+                        self,
+                        *,
+                        messages:list[dict],
+                        model:str,
+                        temperature: float,
+                        max_tokens: int | None
+                      ) -> AsyncGenerator[Dict[str, Any], None]:
         """Yield dict chunks with keys: {"id", "model", "delta", "done"}."""
         raise NotImplementedError
