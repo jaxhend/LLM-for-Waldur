@@ -10,6 +10,10 @@ __pycache__/
 env/
 venv/
 
+#uv & virtualenv
+.uv/
+bin/
+
 # Distribution / packaging
 build/
 dist/
