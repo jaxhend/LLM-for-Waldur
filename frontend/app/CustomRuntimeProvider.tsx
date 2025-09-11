@@ -21,13 +21,19 @@ const CustomModelAdapter: ChatModelAdapter = {
             return "";
         };
 
-         /*
-         For extracting content from streaming data chunks or non-streaming responses.
-         Example data formats:
-         Streaming          data: {"id": "12345", "model": "llama3.2:1b", "delta": " Go", "done": false}
-         Non-streaming      {"model":"llama3.2:1b","content":"Hello!","finish_reason":"stop","usage":null}
-         */
-        interface ChatbotChunk { delta?: string; content?: string; [k: string]: any; }
+        /*
+        For extracting content from streaming data chunks or non-streaming responses.
+        Example data formats:
+        Streaming          data: {"id": "12345", "model": "llama3.2:1b", "delta": " Go", "done": false}
+        Non-streaming      {"model":"llama3.2:1b","content":"Hello!","finish_reason":"stop","usage":null}
+        */
+        interface ChatbotChunk {
+            delta?: string;
+            content?: string;
+
+            [k: string]: any;
+        }
+
         const extractChatbotText = (data: ChatbotChunk): string => {
             return data.delta || data.content || '';
         };
@@ -127,8 +133,8 @@ const CustomModelAdapter: ChatModelAdapter = {
 };
 
 export function CustomRuntimeProvider({
-                                    children,
-                                }: Readonly<{
+                                          children,
+                                      }: Readonly<{
     children: ReactNode;
 }>) {
     const runtime = useLocalRuntime(CustomModelAdapter);
