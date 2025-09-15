@@ -31,7 +31,7 @@ const CustomModelAdapter: ChatModelAdapter = {
             delta?: string;
             content?: string;
 
-            [k: string]: any;
+            [k: string]: unknown;
         }
 
         const extractChatbotText = (data: ChatbotChunk): string => {
@@ -53,8 +53,8 @@ const CustomModelAdapter: ChatModelAdapter = {
                         return null;
                     }
                 }
-                let data: any = JSON.parse(jsonStr);
-                const content: string = extractChatbotText(data);
+                const data: unknown = JSON.parse(jsonStr);
+                const content: string = extractChatbotText(data as ChatbotChunk);
                 return content || null;
             } catch (parseError) {
                 // Skip malformed JSON chunks silently
