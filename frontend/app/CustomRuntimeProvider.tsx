@@ -79,6 +79,11 @@ const CustomModelAdapter: ChatModelAdapter = {
         const lastMessage: ThreadMessage = messages[messages.length - 1];
         const userMessageText: string = extractUserText(lastMessage.content as unknown as ThreadUserMessagePart);
 
+        const modelName: string =
+            process.env.NODE_ENV === "production"
+                ? "gemma3:27b"
+                : "llama3.2:1b";
+
         const requestBody = {
             messages: [
                 {role: "system", content: "Be concise."},
@@ -86,9 +91,15 @@ const CustomModelAdapter: ChatModelAdapter = {
                 {role: "user", content: userMessageText},
             ].filter(msg => msg.content.trim()),
             stream: true,
+            model: modelName
         };
 
-        const response: Response = await fetch(`/api/v1/chat`, {
+        const API_URL: string =
+            process.env.NODE_ENV === "production"
+                ? "/api/v1/chat"
+                : "http://127.0.0.1:8080/api/v1/chat";
+
+        const response: Response = await fetch(API_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
