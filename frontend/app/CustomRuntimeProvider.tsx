@@ -97,7 +97,7 @@ const CustomModelAdapter: ChatModelAdapter = {
         const API_URL: string =
             process.env.NODE_ENV === "production"
                 ? "/api/v1/chat"
-                : "http://127.0.0.1:8080/api/v1/chat";
+                : "http://127.0.0.1:8000/api/v1/chat";
 
         const response: Response = await fetch(API_URL, {
             method: "POST",
