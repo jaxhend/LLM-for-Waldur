@@ -88,9 +88,7 @@ const CustomModelAdapter: ChatModelAdapter = {
             stream: true,
         };
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-
-        const response: Response = await fetch(`${apiUrl}/api/v1/chat`, {
+        const response: Response = await fetch(`/api/v1/chat`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
