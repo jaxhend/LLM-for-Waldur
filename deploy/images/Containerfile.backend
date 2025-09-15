@@ -23,5 +23,4 @@ USER appuser
 EXPOSE 8000
 
 # Production entrypoint with Gunicorn + Uvicorn workers
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "app.main:app", "--bind", "0.0.0.0:8000", "--workers", "4", "--log-level", "info"]
-
+CMD ["gunicorn", "-c", "app/gunicorn_conf.py", "app.main:app"]
