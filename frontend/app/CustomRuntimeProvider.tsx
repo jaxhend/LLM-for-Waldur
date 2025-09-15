@@ -88,7 +88,9 @@ const CustomModelAdapter: ChatModelAdapter = {
             stream: true,
         };
 
-        const response: Response = await fetch("http://127.0.0.1:8080/api/v1/chat", {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+        const response: Response = await fetch(`${apiUrl}/api/v1/chat`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
