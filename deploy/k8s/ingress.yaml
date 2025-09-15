@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: waldur-llm-ingress
+  name: ingress
   namespace: llm-testing-waldur-com
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
@@ -25,3 +25,7 @@ spec:
                 name: frontend
                 port:
                   number: 80
+  tls:
+    - hosts:
+        - llm.testing.waldur.com
+      secretName: llm.testing.waldur.com
