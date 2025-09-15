@@ -13,26 +13,39 @@ spec:
       labels:
         app: ollama
     spec:
+      initContainers:
+        - name: pull-llama-model
+          image: ollama/ollama:latest
+          command: [ "/bin/sh", "-c" ]
+          args:
+            - |
+              ollama serve &
+              sleep 10
+              ollama pull llama3.2:1b
+              pkill ollama
+          volumeMounts:
+            - name: ollama-data
+              mountPath: /root/.ollama
       containers:
-      - name: ollama
-        image: ollama/ollama:latest
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 11434
-        resources:
-          limits:
-            nvidia.com/gpu: 1
-        volumeMounts:
-        - name: ollama-data
-          mountPath: /root/.ollama
+        - name: ollama
+          image: ollama/ollama:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 11434
+          resources:
+            limits:
+              nvidia.com/gpu: 1
+          volumeMounts:
+            - name: ollama-data
+              mountPath: /root/.ollama
       tolerations:
-      - key: nvidia.com/gpu
-        operator: Exists
-        effect: NoSchedule
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
       volumes:
-      - name: ollama-data
-        persistentVolumeClaim:
-          claimName: ollama-pvc
+        - name: ollama-data
+          persistentVolumeClaim:
+            claimName: ollama-pvc
 ---
 apiVersion: v1
 kind: Service
@@ -43,8 +56,8 @@ spec:
   selector:
     app: ollama
   ports:
-  - port: 11434
-    targetPort: 11434
+    - port: 11434
+      targetPort: 11434
   type: ClusterIP
 ---
 apiVersion: v1
