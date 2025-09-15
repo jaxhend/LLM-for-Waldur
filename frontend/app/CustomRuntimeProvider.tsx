@@ -54,9 +54,12 @@ const CustomModelAdapter: ChatModelAdapter = {
                     }
                 }
                 const data: unknown = JSON.parse(jsonStr);
-                const content: string = extractChatbotText(data as ChatbotChunk);
-                return content || null;
-            } catch (parseError) {
+                if (typeof data === 'object' && data !== null) {
+                    const content: string = extractChatbotText(data as ChatbotChunk);
+                    return content || null;
+                }
+                return null;
+            } catch {
                 // Skip malformed JSON chunks silently
                 return null;
             }
