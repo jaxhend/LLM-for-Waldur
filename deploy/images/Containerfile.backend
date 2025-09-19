@@ -9,15 +9,15 @@ RUN apt-get update && apt-get install -y git \
 
 # Copy backend source code
 RUN git clone --branch main --depth 1 https://github.com/jaxhend/LLM-for-Waldur.git /app
-
 WORKDIR /app/backend
+
+# Add non-root user
+RUN useradd --system --create-home --home-dir /home/appuser appuser \
+    && chown -R appuser /app
+USER appuser
 
 # Install Python dependencies from pyproject.toml
 RUN uv sync
-
-# Add non-root user
-RUN useradd --system --create-home --home-dir /home/appuser appuser
-USER appuser
 
 # Expose FastAPI port
 EXPOSE 8000
