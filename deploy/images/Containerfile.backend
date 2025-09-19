@@ -1,26 +1,26 @@
 # Base image
-FROM python:3.11-slim
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y git curl \
+RUN apt-get update && apt-get install -y git \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy backend source code
-RUN git clone --branch main --depth 1 https://github.com/jaxhend/LLM-for-Waldur.git /app/src
+RUN git clone --branch main --depth 1 https://github.com/jaxhend/LLM-for-Waldur.git /app
 
-WORKDIR /app/src/backend
+WORKDIR /app/backend
 
 # Install Python dependencies from pyproject.toml
-RUN pip install --no-cache-dir /app/src/backend
+RUN uv sync
 
 # Add non-root user
-RUN adduser --system appuser
+RUN useradd --system --create-home --home-dir /home/appuser appuser
 USER appuser
 
 # Expose FastAPI port
 EXPOSE 8000
 
 # Production entrypoint with Gunicorn + Uvicorn workers
-CMD ["gunicorn", "-c", "app/gunicorn_conf.py", "app.main:app"]
+CMD ["uv", "run", "gunicorn", "-c", "app/gunicorn_conf.py", "app.main:app"]
