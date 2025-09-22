@@ -8,7 +8,7 @@ RUN apk add --no-cache git bash
 # Copy frontend source code
 COPY frontend/ ./frontend
 
-WORKDIR /app/src/frontend
+WORKDIR /app/frontend
 
 # Install dependencies with Yarn (frozen lockfile for reproducibility)
 RUN yarn install --frozen-lockfile
