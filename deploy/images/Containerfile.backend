@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y git \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy backend source code
-RUN git clone --branch main --depth 1 https://github.com/jaxhend/LLM-for-Waldur.git /app
+COPY backend/ ./backend
 WORKDIR /app/backend
 
 # Add non-root user

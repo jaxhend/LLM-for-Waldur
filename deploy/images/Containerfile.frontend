@@ -5,8 +5,8 @@ WORKDIR /app
 # Install git
 RUN apk add --no-cache git bash
 
-# Clone repo (pin branch/tag/commit for reproducibility)
-RUN git clone --branch main --depth 1 https://github.com/jaxhend/LLM-for-Waldur.git /app/src
+# Copy frontend source code
+COPY frontend/ ./frontend
 
 WORKDIR /app/src/frontend
 

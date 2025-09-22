@@ -38,7 +38,7 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GHCR_TOKEN }}
       - run: |
-          docker build --no-cache -f deploy/images/Containerfile.backend -t backend:latest ./backend
+          docker build -f deploy/images/Containerfile.backend -t backend:latest .
           docker tag backend:latest ${{ env.BACKEND_IMAGE }}
           docker push ${{ env.BACKEND_IMAGE }}
 
@@ -57,6 +57,6 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GHCR_TOKEN }}
       - run: |
-          docker build --no-cache -f deploy/images/Containerfile.frontend -t frontend:latest ./frontend
+          docker build -f deploy/images/Containerfile.frontend -t frontend:latest .
           docker tag frontend:latest ${{ env.FRONTEND_IMAGE }}
           docker push ${{ env.FRONTEND_IMAGE }}
