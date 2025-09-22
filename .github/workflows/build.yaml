@@ -1,18 +1,32 @@
 name: Build and Push Images to GHCR
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
-    paths:
-      - 'backend/**'
-      - 'frontend/**'
+  workflow_dispatch:
 
 jobs:
+  filter:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+         filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+
   build-backend:
     runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.modified, 'backend/')
+    needs: filter
+    if: needs.filter.outputs.backend == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -28,7 +42,8 @@ jobs:
 
   build-frontend:
     runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.modified, 'frontend/')
+    needs: filter
+    if: needs.filter.outputs.frontend == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
