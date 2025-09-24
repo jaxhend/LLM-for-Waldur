@@ -1,0 +1,20 @@
+# This file defines a reusable composite action to set up kubectl.
+# It takes the kubeconfig file content as a secure input and configures the runner.
+
+name: 'Kubernetes Setup'
+description: 'Sets up the kubeconfig file for kubectl access from a secret.'
+
+inputs:
+  kubeconfig-content:
+    description: 'The content of the kubeconfig file.'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Kubeconfig
+      shell: bash
+      run: |
+        mkdir -p $HOME/.kube
+        echo "${{ inputs.kubeconfig-content }}" > $HOME/.kube/config
+        chmod 600 $HOME/.kube/config
