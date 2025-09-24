@@ -16,7 +16,7 @@ spec:
       containers:
         - name: backend
           image: ghcr.io/jaxhend/llm-for-waldur/backend:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
           env:
