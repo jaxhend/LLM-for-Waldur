@@ -71,7 +71,6 @@ jobs:
     if: needs.filter.outputs.frontend == 'true'
     env:
       FRONTEND_IMAGE: ghcr.io/jaxhend/llm-for-waldur/frontend
-      CACHE_DIR: /tmp/.buildx-cache-frontend
     steps:
       - uses: actions/checkout@v4
 
@@ -86,23 +85,12 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Restore Docker build cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.CACHE_DIR }}
-          key: frontend-build-cache-${{ github.sha }}
-          restore-keys: frontend-build-cache-
-
       - name: Build and Push Frontend
         run: |
           IMAGE_TAG=${GITHUB_SHA}
           docker buildx build \
             --builder ${{ steps.buildx.outputs.name }} \
-            --cache-from=type=local,src=${CACHE_DIR} \
-            --cache-to=type=local,dest=${CACHE_DIR}-new,mode=max \
             -f deploy/images/Containerfile.frontend \
             -t $FRONTEND_IMAGE:latest \
             -t $FRONTEND_IMAGE:$IMAGE_TAG \
-            --push \
-            .
-          mv ${CACHE_DIR}-new ${CACHE_DIR}
+            --push .
