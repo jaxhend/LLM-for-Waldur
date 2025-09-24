@@ -1,4 +1,4 @@
-name: Test Kubernetes Connection
+name: Test Kubernetes Deployment
 
 on:
   workflow_run:
@@ -21,8 +21,6 @@ jobs:
           echo "${{ secrets.KUBECONFIG_CONTENT }}" > $HOME/.kube/config
           chmod 600 $HOME/.kube/config
 
-      - name: Test kubectl connection
+      - name: Apply Kubernetes Manifests
         run: |
-          kubectl version --client
-          kubectl get nodes
-          kubectl get namespaces
+          kubectl apply -f deploy/k8s/
