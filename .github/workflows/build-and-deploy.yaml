@@ -84,6 +84,7 @@ jobs:
             -t $BACKEND_IMAGE:$IMAGE_TAG \
             --push \
             .
+          rm -rf ${CACHE_DIR}
           mv ${CACHE_DIR}-new ${CACHE_DIR}
 
       - name: Deploy Backend to K8s
