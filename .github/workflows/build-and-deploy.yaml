@@ -38,7 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Apply K8s Manifests
-        uses: ./.github/actions/kube-setup.yaml
+        uses: ./.github/actions/kube-setup
         with:
           kubeconfig-content: ${{ secrets.KUBECONFIG_CONTENT }}
       - run: kubectl apply -f deploy/k8s/
@@ -87,7 +87,7 @@ jobs:
           mv ${CACHE_DIR}-new ${CACHE_DIR}
 
       - name: Deploy Backend to K8s
-        uses: ./.github/actions/kube-setup.yaml
+        uses: ./.github/actions/kube-setup
         with:
           kubeconfig-content: ${{ secrets.KUBECONFIG_CONTENT }}
       - run: |
@@ -125,7 +125,7 @@ jobs:
             --push .
 
       - name: Deploy Frontend to K8s
-        uses: ./.github/actions/kube-setup.yaml
+        uses: ./.github/actions/kube-setup
         with:
           kubeconfig-content: ${{ secrets.KUBECONFIG_CONTENT }}
       - run: kubectl rollout restart deployment/frontend
