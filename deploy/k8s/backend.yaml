@@ -22,6 +22,21 @@ spec:
           env:
             - name: OLLAMA_BASE_URL
               value: "http://ollama:11434"
+
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: pg-cluster-secret
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pg-cluster-secret
+                  key: password
+            - name: POSTGRES_DB
+              value: "appdb"
+            - name: POSTGRES_HOST
+              value: "pg-cluster-rw.llm-testing-waldur-com"
       resources:
         requests:
           memory: "128Mi"

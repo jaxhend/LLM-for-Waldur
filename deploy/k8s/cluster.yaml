@@ -1,0 +1,18 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: pg-cluster
+  namespace: llm-testing-waldur-com
+spec:
+  instances: 3
+  imageName: ghcr.io/cloudnative-pg/postgresql:17.5
+  storage:
+    size: 10Gi
+  bootstrap:
+    initdb:
+      database: appdb
+      owner: appuser
+      secret:
+        name: pg-cluster-secret
+  monitoring:
+    enablePodMonitor: true
