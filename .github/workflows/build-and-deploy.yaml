@@ -38,10 +38,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Create Postgres Secret
+        env:
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
           kubectl create secret generic pg-cluster-secret \
-            --from-literal=username=${{ secrets.POSTGRES_USER }} \
-            --from-literal=password=${{ secrets.POSTGRES_PASSWORD }} \
+            --from-literal=username=$POSTGRES_USER \
+            --from-literal=password=$POSTGRES_PASSWORD \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Apply K8s Manifests
