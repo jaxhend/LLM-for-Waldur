@@ -37,7 +37,13 @@ jobs:
     if: needs.filter.outputs.k8s == 'true'
     steps:
       - uses: actions/checkout@v4
-      - name: Create Postgres Secret
+
+      - name: Setup Kubeconfig
+        uses: ./.github/actions/kube-setup
+        with:
+          kubeconfig-content: ${{ secrets.KUBECONFIG_CONTENT }}
+
+      - name: Create or Update Postgres Secret
         env:
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
@@ -48,10 +54,7 @@ jobs:
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Apply K8s Manifests
-        uses: ./.github/actions/kube-setup
-        with:
-          kubeconfig-content: ${{ secrets.KUBECONFIG_CONTENT }}
-      - run: kubectl apply -f deploy/k8s/
+        run: kubectl apply -f deploy/k8s/
 
 
   build-backend:
