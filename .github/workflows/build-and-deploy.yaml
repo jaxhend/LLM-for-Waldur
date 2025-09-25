@@ -37,25 +37,11 @@ jobs:
     if: needs.filter.outputs.k8s == 'true'
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Kubeconfig
+      - name: Apply K8s Manifests
         uses: ./.github/actions/kube-setup
         with:
           kubeconfig-content: ${{ secrets.KUBECONFIG_CONTENT }}
-
-      - name: Create or Update Postgres Secret
-        env:
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-        run: |
-          kubectl create secret generic pg-cluster-secret \
-            --from-literal=username=$POSTGRES_USER \
-            --from-literal=password=$POSTGRES_PASSWORD \
-            --dry-run=client -o yaml | kubectl apply -f -
-
-      - name: Apply K8s Manifests
-        run: kubectl apply -f deploy/k8s/
-
+      - run: kubectl apply -f deploy/k8s/
 
   build-backend:
     runs-on: ubuntu-latest
