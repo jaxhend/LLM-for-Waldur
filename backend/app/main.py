@@ -3,9 +3,11 @@ import logging
 
 from fastapi import  FastAPI, Request, HTTPException
 from fastapi.exceptions import RequestValidationError
+from langserve import add_routes
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import StreamingResponse, JSONResponse
 
+from .chains.chat import build_chat_chain
 from .config import settings
 from .schemas import ChatRequest, ChatChunk, ChatResponse
 from .services import llm_service
@@ -57,6 +59,7 @@ async def health():
             "provider": settings.default_provider,
             "model": settings.model,}
 
+# LEGACY VERSION
 @app.post("/api/v1/chat")
 async def chat(req: ChatRequest):
     try:
@@ -90,6 +93,10 @@ async def chat(req: ChatRequest):
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise LLMError(str(e))
+
+# LangServe routes:
+chain = build_chat_chain()
+add_routes(app, chain, path="/lc/chat")
 
 
 
