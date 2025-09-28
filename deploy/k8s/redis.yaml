@@ -1,0 +1,96 @@
+# ConfigMap with minimal redis.conf
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  namespace: llm-testing-waldur-com
+data:
+  redis.conf: |
+    bind 0.0.0.0
+    protected-mode yes
+    port 6379
+    requirepass ${REDIS_PASSWORD}
+    save 900 1
+    save 300 10
+    save 60 10000
+    appendonly yes
+    appendfilename "appendonly.aof"
+    dir /data
+    maxmemory 0
+    maxclients 10000
+---
+
+# ClusterIP Service for internal access
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: llm-testing-waldur-com
+spec:
+  selector:
+    app: redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+      name: redis
+  type: ClusterIP
+
+---
+# Minimal Redis StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: llm-testing-waldur-com
+  labels:
+    app: redis
+spec:
+  serviceName: "redis"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:8.2-alpine
+          args: ["redis-server", "/etc/redis/redis.conf"]
+          volumeMounts:
+            - name: redis-conf
+              mountPath: /etc/redis/redis.conf
+              subPath: redis.conf
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secret
+                  key: redis-password
+            - name: REDISCLI_AUTH
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secret
+                  key: redis-password
+          ports:
+            - containerPort: 6379
+              name: redis
+      volumes:
+        - name: redis-conf
+          configMap:
+            name: redis-config
+            items:
+              - key: redis.conf
+                path: redis.conf
+
+  volumeClaimTemplates:
+    - metadata:
+        name: redis-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+        storageClassName: "standard"
