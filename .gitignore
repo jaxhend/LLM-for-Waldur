@@ -38,4 +38,4 @@ dist/
 *.crt
 
 # Kubernetes secrets
-deploy/k8s/*secret.yaml
+deploy/k8s/secrets/*
