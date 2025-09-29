@@ -20,6 +20,8 @@ spec:
           ports:
             - containerPort: 8000
           env:
+            - name: NODE_ENV
+              value: "production"
             - name: OLLAMA_BASE_URL
               value: "http://ollama:11434"
             - name: POSTGRES_USER
