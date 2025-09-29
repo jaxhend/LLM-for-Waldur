@@ -37,5 +37,5 @@ dist/
 *.key
 *.crt
 
-# Kubernetes secrets
-deploy/k8s/secrets/*
+# Kubernetes local
+deploy/k8s/local/*
