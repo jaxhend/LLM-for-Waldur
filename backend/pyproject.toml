@@ -12,7 +12,8 @@ dependencies =  [
     "rich>=13.7",
     "sse-starlette>=3.0.0",
     "langserve>=0.3.0",
-    "langchain-ollama>=0.3.8"
+    "langchain-ollama>=0.3.8",
+    "structlog>=25.4.0",
 ]
 
 [build-system]
