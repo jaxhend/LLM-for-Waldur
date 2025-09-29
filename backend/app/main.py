@@ -1,16 +1,10 @@
-import json
 import logging
-
-from fastapi import  FastAPI, Request, HTTPException
+from fastapi import  FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from langserve import add_routes
 from starlette.middleware.cors import CORSMiddleware
-from starlette.responses import StreamingResponse, JSONResponse
-
+from starlette.responses import JSONResponse
 from .chains.chat import build_chat_chain
-from .config import settings
-from .schemas import ChatRequest, ChatChunk, ChatResponse
-from .services import llm_service
 from .services.errors import LLMError
 
 logger = logging.getLogger(__name__)
@@ -53,46 +47,7 @@ async def exception_handler(request: Request, exc: Exception):
         content={"detail": "Internal Server Error"},
     )
 
-@app.get("/api/health")
-async def health():
-    return {"status": "ok",
-            "provider": settings.default_provider,
-            "model": settings.model,}
 
-# LEGACY VERSION
-@app.post("/api/v1/chat")
-async def chat(req: ChatRequest):
-    try:
-        if req.stream:
-            async def event_source():
-                try:
-                    async for ch in llm_service.astream(req):
-                        yield f"data: {json.dumps(ChatChunk(**ch).model_dump())}\n\n"
-                except Exception as e:
-                    error_payload = {
-                        "id": "error",
-                        "model": settings.model,
-                        "delta": str(e),
-                        "done": True
-                    }
-                    yield f"data: {json.dumps(error_payload)}\n\n"
-
-            return StreamingResponse(
-                event_source(),
-                media_type="text/event-stream",
-                headers= {
-                "Cache-Control": "no-cache",
-                "Connection": "keep-alive",
-                }
-            )
-        else:
-            out = await llm_service.complete(req)
-            response = ChatResponse(**out)
-            return JSONResponse(response.model_dump())
-    except ValueError as ve:
-        raise HTTPException(status_code=400, detail=str(ve))
-    except Exception as e:
-        raise LLMError(str(e))
 
 # LangServe routes:
 chain = build_chat_chain()
