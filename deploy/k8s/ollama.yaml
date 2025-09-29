@@ -13,39 +13,20 @@ spec:
       labels:
         app: ollama
     spec:
-      initContainers:
-        - name: pull-llama-model
-          image: ollama/ollama:latest
-          command: [ "/bin/sh", "-c" ]
-          args:
-            - |
-              ollama serve &
-              sleep 10
-              ollama pull gemma3:27b
-              pkill ollama
-          volumeMounts:
-            - name: ollama-data
-              mountPath: /root/.ollama
       containers:
         - name: ollama
-          image: ollama/ollama:latest
+          image: ghcr.io/jaxhend/llm-for-waldur/ollama:gemma3
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 11434
           resources:
             limits:
               nvidia.com/gpu: 1
-          volumeMounts:
-            - name: ollama-data
-              mountPath: /root/.ollama
+          command: ["ollama", "serve"]
       tolerations:
         - key: nvidia.com/gpu
           operator: Exists
           effect: NoSchedule
-      volumes:
-        - name: ollama-data
-          persistentVolumeClaim:
-            claimName: ollama-pvc
 ---
 apiVersion: v1
 kind: Service
@@ -60,14 +41,32 @@ spec:
       targetPort: 11434
   type: ClusterIP
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
 metadata:
-  name: ollama-pvc
+  name: redis-list-auth
   namespace: llm-testing-waldur-com
 spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 20Gi
+  secretTargetRef:
+    - parameter: password
+      name: redis-secret
+      key: redis-password
+
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: ollama-worker-scaler
+  namespace: llm-testing-waldur-com
+spec:
+  scaleTargetRef:
+    name: ollama
+  minReplicaCount: 0
+  maxReplicaCount: 2
+  cooldownPeriod: 300
+  triggers:
+    - type: redis
+      metadata:
+        address: redis:6379
+        listName: ollama-queue
+        listLength: "1"

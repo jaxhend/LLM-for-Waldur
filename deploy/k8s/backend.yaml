@@ -37,7 +37,7 @@ spec:
             - name: POSTGRES_DB
               value: "appdb"
             - name: POSTGRES_HOST
-              value: "pg-cluster-rw.llm-testing-waldur-com"
+              value: "pg-cluster-rw"
       resources:
         requests:
           memory: "128Mi"

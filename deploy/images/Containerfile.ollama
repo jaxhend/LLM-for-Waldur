@@ -1,0 +1,11 @@
+# Size 20.5 GB
+
+# Stage 1: pull model
+FROM ollama/ollama:latest as builder
+RUN ollama serve & sleep 5 && ollama pull gemma3:27b
+
+# Stage 2: final image
+FROM ollama/ollama:latest
+COPY --from=builder /root/.ollama/models /root/.ollama/models
+EXPOSE 11434
+CMD ["ollama", "serve"]
