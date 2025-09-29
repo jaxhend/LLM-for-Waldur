@@ -1,7 +1,8 @@
-import time, uuid, structlog
+import uuid, structlog
 from starlette.middleware.base import BaseHTTPMiddleware
 
 logger = structlog.get_logger()
+
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):

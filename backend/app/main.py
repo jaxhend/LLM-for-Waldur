@@ -1,13 +1,11 @@
-import logging
-import os
-
 import structlog
-from fastapi import  FastAPI, Request
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from langserve import add_routes
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from .chains.chat import build_chat_chain
+from .config import settings
 from .services.logging import setup_logging
 from .services.request_context import RequestContextMiddleware
 
@@ -16,17 +14,17 @@ logger = structlog.get_logger()
 
 app = FastAPI(title="Waldur LLM Backend", version="0.1.0", description="Waldur LLM Backend")
 
+
 @app.on_event("startup")
 async def startup_event():
-    logger.info("app.startup", env=os.getenv("NODE_ENV"))
-
+    logger.info("app.startup", env=settings.env)
 
 
 origins = [
     "https://llm.testing.waldur.com/"
 ]
 
-if os.getenv("NODE_ENV") != "production":
+if settings.env != "production":
     origins.append("http://localhost:3000")
     origins.append("http://127.0.0.1:3000")
 
@@ -38,6 +36,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
@@ -60,11 +59,6 @@ async def exception_handler(request: Request, exc: Exception):
     )
 
 
-
 # LangServe routes:
 chain = build_chat_chain()
 add_routes(app, chain, path="/api/lc/chat")
-
-
-
-
