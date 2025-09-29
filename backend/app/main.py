@@ -96,7 +96,7 @@ async def chat(req: ChatRequest):
 
 # LangServe routes:
 chain = build_chat_chain()
-add_routes(app, chain, path="/lc/chat")
+add_routes(app, chain, path="/api/lc/chat")
 
 
 
