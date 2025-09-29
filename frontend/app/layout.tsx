@@ -20,14 +20,14 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({
-                                       children,
-                                   }: Readonly<{
+               children,
+           }: Readonly<{
     children: ReactNode;
 }>) {
     return (
         <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
         <body>
-        <CustomRuntimeProvider>
+        <CustomRuntimeProvider mode="stream">
             {children}
         </CustomRuntimeProvider>
         </body>
