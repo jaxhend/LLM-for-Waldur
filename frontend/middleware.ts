@@ -7,12 +7,23 @@ export const config = {
 export function middleware(req: NextRequest) {
     const authHeader = req.headers.get('authorization')
 
-    if (authHeader) {
-        const base64 = authHeader.split(' ')[1]
-        const [user, pwd] = atob(base64).split(':')
+    const BASIC_USER = process.env.BASIC_AUTH_USER
+    const BASIC_PASSWORD = process.env.BASIC_AUTH_PASSWORD
 
-        if (user === '4dmin' && pwd === 'testpwd123') {
-            return NextResponse.next() // Authorized
+    if (!BASIC_USER || !BASIC_PASSWORD) {
+        console.warn('BASIC_USER or BASIC_PASSWORD is not set in environment variables.')
+        return NextResponse.next() // Allow access if credentials are not set
+    }
+
+    if (authHeader) {
+        const [scheme, encoded] = authHeader.split(' ')
+        if (scheme === 'Basic' && encoded) {
+            const decoded = Buffer.from(encoded, 'base64').toString('utf-8')
+            const [user, pwd] = decoded.split(':')
+
+            if (user === BASIC_USER && pwd === BASIC_PASSWORD) {
+                return NextResponse.next() // Authorized
+            }
         }
     }
 

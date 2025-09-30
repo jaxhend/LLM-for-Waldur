@@ -6,7 +6,6 @@ import {
     useLocalRuntime,
     type ChatModelAdapter, ThreadUserMessagePart, ThreadMessage
 } from "@assistant-ui/react";
-import {mode} from "d3-array";
 
 type Mode = "stream" | "invoke";
 
@@ -25,7 +24,6 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
             };
 
             // For parsing Chatbot's streaming response lines
-
             const processChatbotLine = (line: string): string | null => {
                 const trimmed = line.trim();
                 if (!trimmed) return null;
@@ -79,17 +77,17 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
                 `user: ${userMessageText}`
 
             const BASE_API_URL: string =
-                 process.env.NODE_ENV === "production"
+                process.env.NODE_ENV === "production"
                     ? "/api"
                     : "http://127.0.0.1:8000";
 
 
             // --------------- invoke (complete message) -------------------
             if (mode === "invoke") {
-                const response = await fetch(`${BASE_API_URL}/lc/chat/invoke`, {
+                const response = await fetch(`${BASE_API_URL}/api/lc/chat/invoke`, {
                     method: "POST",
                     headers: {
-                    "Content-Type": "application/json",
+                        "Content-Type": "application/json",
                     },
                     body: JSON.stringify({input: prompt}),
                     signal: abortSignal,
@@ -100,7 +98,7 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
                     throw new Error(`LangServe ${response.status}: ${body || "request failed"}`);
                 }
                 const json = (await response.json()) as {
-                    output?: {content?: string};
+                    output?: { content?: string };
 
                     content?: string;
                 };
@@ -113,7 +111,7 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
             }
 
             // ----------------- Streaming (SSE) ------------------
-            const response: Response = await fetch(`${BASE_API_URL}/lc/chat/stream`, {
+            const response: Response = await fetch(`${BASE_API_URL}/api/lc/chat/stream`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -161,10 +159,10 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
 }
 
 export function CustomRuntimeProvider({
-    children,
-    mode = "stream", // default:streaming
+                                          children,
+                                          mode = "stream", // default:streaming
 
-}: Readonly<{
+                                      }: Readonly<{
     children: ReactNode;
     mode?: Mode; // "stream" | "invoke"
 }>) {
