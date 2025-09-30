@@ -78,7 +78,7 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
 
             const BASE_API_URL: string =
                 process.env.NODE_ENV === "production"
-                    ? "/api"
+                    ? "https://llm.testing.waldur.com"
                     : "http://127.0.0.1:8000";
 
 
