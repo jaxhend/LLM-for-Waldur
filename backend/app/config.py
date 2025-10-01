@@ -15,5 +15,11 @@ class Settings:
         self.postgres_db: str = os.getenv("POSTGRES_DB", "postgres")
         self.postgres_host: str = os.getenv("POSTGRES_HOST", "localhost")
 
+        self.redis_host: str = os.getenv("REDIS_HOST", "127.0.0.1")
+        self.redis_port: int = int(os.getenv("REDIS_PORT", "6379"))
+        self.redis_password: str = os.getenv("REDIS_PASSWORD", "")
+        self.redis_queue: str = os.getenv("REDIS_QUEUE", "ollama-queue")
+        self.redis_db: str = os.getenv("REDIS_DB", "0")
+
 
 settings = Settings()

@@ -10,6 +10,9 @@ dependencies =  [
     "langserve>=0.3.2",
     "langchain-ollama>=0.3.8",
     "structlog>=25.4.0",
+    "redis>=6.4.0",
+    "aiolimiter>=1.2.1",
+    "pymupdf>=1.26.4",
 ]
 
 [build-system]
