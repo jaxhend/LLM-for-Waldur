@@ -1,4 +1,3 @@
-
 from ..redis.redis_runnable import RedisQueueRunnable
 
 

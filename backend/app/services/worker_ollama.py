@@ -1,10 +1,11 @@
-import json
 import asyncio
-import httpx
+import json
 import os
 
+import httpx
 import structlog
 from redis.asyncio import Redis
+
 from ..config import settings
 
 REDIS_HOST = settings.redis_host

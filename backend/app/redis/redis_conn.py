@@ -1,10 +1,9 @@
-import os
-
 from redis.asyncio import Redis
 
 from ..config import settings
 
 _redis: Redis | None = None
+
 
 def get_redis() -> Redis:
     global _redis
@@ -15,6 +14,7 @@ def get_redis() -> Redis:
         db = settings.redis_db
         _redis = Redis(host=host, port=port, password=pwd, db=db, decode_responses=True)
     return _redis
+
 
 async def close_redis():
     global _redis
