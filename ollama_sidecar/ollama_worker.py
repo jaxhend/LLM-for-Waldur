@@ -8,11 +8,12 @@ from redis.asyncio import Redis
 
 REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
 REDIS_PORT = os.getenv("REDIS_PORT", "6379")
-QUEUE = os.getenv("REDIS_QUEUE", "ollama-queue")
+REDIS_QUEUE = os.getenv("REDIS_QUEUE", "ollama-queue")
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "")
 
 OLLAMA_URL = "http://127.0.0.1:11434"
 OLLAMA_MODEL = "gemma3:27b" if os.getenv("NODE_ENV",
-                                         "development") == "production" else "llama3.2:1b"  # e.g. "llama3.2:1b"
+                                         "development") == "production" else "llama3.2:1b"
 
 logger = structlog.get_logger(__name__)
 WORKER_ID = os.getenv("WORKER_ID", f"pid-{os.getpid()}")
@@ -74,8 +75,6 @@ async def stream_ollama_chat(messages: list[dict], options: dict | None = None):
     if options:
         payload["options"] = options
 
-    print("[OLLAMA /api/chat PAYLOAD]", json.dumps(payload, ensure_ascii=False))
-
     async with httpx.AsyncClient(timeout=None) as client:
         async with client.stream("POST", f"{OLLAMA_URL}/api/chat", json=payload) as resp:
             try:
@@ -100,18 +99,15 @@ async def stream_ollama_chat(messages: list[dict], options: dict | None = None):
 
 
 async def main():
-    r = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+    r = Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, decode_responses=True)
     while True:
-        _, job_json = await r.blpop(QUEUE, timeout=0)
+        _, job_json = await r.blpop(REDIS_QUEUE, timeout=0)
         job = json.loads(job_json)
         job_id = job["id"]
         prompt = job.get("input", "")
         channel = f"ollama:result:{job_id}"
 
-        # Announce which worker took the job (ignored by Runnable). Used for local dev
-        await r.publish(channel, json.dumps({"type": "worker", "worker_id": WORKER_ID}))
-
-        logger.info("worker.job.received", worker_id=WORKER_ID, job_id=job_id, queue=QUEUE, preview=prompt[:120])
+        logger.info("worker.job.received", worker_id=WORKER_ID, job_id=job_id, queue=REDIS_QUEUE, preview=prompt[:120])
 
         try:
             messages, options = _extract_messages_and_options(job)

@@ -2,12 +2,12 @@ import structlog
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from langserve import add_routes
-from redis.asyncio import Redis
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 
 from .chains.chat import build_chat_chain
 from .config import settings
+from .redis.redis_conn import get_redis
 from .services.logging import setup_logging
 from .services.request_context import RequestContextMiddleware
 
@@ -68,12 +68,7 @@ async def health_check():
     Verifies Redis connectivity and returns basic status info.
     """
     try:
-        r = Redis(
-            host=settings.redis_host,
-            port=settings.redis_port,
-            password=settings.redis_password or None,
-            decode_responses=True,
-        )
+        r = get_redis()
         pong = await r.ping()
         await r.aclose()
         redis_ok = pong is True

@@ -9,8 +9,6 @@ from langchain_core.runnables import Runnable
 from ..config import settings
 from ..redis.redis_conn import get_redis
 
-QUEUE = settings.redis_queue
-
 class RedisQueueRunnable(Runnable):
     """
         Sends a job to Redis LIST (RPUSH) and streams back results
@@ -63,7 +61,7 @@ class RedisQueueRunnable(Runnable):
             "config": (config or {}).get("configurable", {}),
         }
         redis = get_redis()
-        await redis.rpush(QUEUE, json.dumps(payload))
+        await redis.rpush(settings.redis_queue, json.dumps(payload))
 
         # 2) Stream results back
         async for chunk in self._stream_from_pubsub(job_id):
