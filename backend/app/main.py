@@ -5,6 +5,7 @@ from langserve import add_routes
 from redis.asyncio import Redis
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
+
 from .chains.chat import build_chat_chain
 from .config import settings
 from .services.logging import setup_logging
@@ -59,6 +60,7 @@ async def exception_handler(request: Request, exc: Exception):
         content={"detail": "Internal Server Error"},
     )
 
+
 @app.get("/health")
 async def health_check():
     """
@@ -69,7 +71,6 @@ async def health_check():
         r = Redis(
             host=settings.redis_host,
             port=settings.redis_port,
-            db=int(settings.redis_db),
             password=settings.redis_password or None,
             decode_responses=True,
         )
