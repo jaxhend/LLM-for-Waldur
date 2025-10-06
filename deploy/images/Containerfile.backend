@@ -3,12 +3,8 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y git \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy backend source code
-COPY backend/ ./backend
+# Copy backend source code (context is ./backend)
+COPY ./app ./backend/app
 WORKDIR /app/backend
 
 # Add non-root user
