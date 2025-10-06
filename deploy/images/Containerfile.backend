@@ -1,15 +1,15 @@
 # Base image
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
-WORKDIR /app
+WORKDIR /backend
 
 # Copy backend source code (context is ./backend)
-COPY ./app/. /app/backend
-WORKDIR /app/backend
+COPY ./ /backend
+WORKDIR /backend
 
 # Add non-root user
 RUN useradd --system --create-home --home-dir /home/appuser appuser \
-    && chown -R appuser /app
+    && chown -R appuser /backend
 USER appuser
 
 # Install Python dependencies from pyproject.toml
