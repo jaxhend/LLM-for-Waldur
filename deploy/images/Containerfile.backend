@@ -4,7 +4,7 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 WORKDIR /app
 
 # Copy backend source code (context is ./backend)
-COPY ./app ./backend/app
+COPY ./app/. /app/backend
 WORKDIR /app/backend
 
 # Add non-root user
