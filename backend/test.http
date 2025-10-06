@@ -1,0 +1,18 @@
+@base = http://127.0.0.1:8000
+
+### Streaming (SSE)
+POST {{base}}/api/lc/chat/stream
+Accept: text/event-stream
+Cache-Control: no-cache
+Content-Type: application/json
+
+{"input":"Explain RAG in one sentence."}
+
+### Non-stream (for comparison)
+POST {{base}}/api/lc/chat/invoke
+Content-Type: application/json
+
+{"input":"Explain RAG in one sentence."}
+###
+
+GET {{base}}/health

@@ -6,17 +6,15 @@ import httpx
 import structlog
 from redis.asyncio import Redis
 
+from ..redis.redis_conn import get_redis
 from ..config import settings
 
-REDIS_HOST = settings.redis_host
-REDIS_PORT = settings.redis_port
-REDIS_DB   = settings.redis_db
-QUEUE      = settings.redis_queue
+QUEUE = settings.redis_queue
 
-OLLAMA_URL   = settings.ollama_base_url   # e.g. "http://127.0.0.1:11434"
-OLLAMA_MODEL = settings.ollama_model      # e.g. "llama3.2:1b"
+OLLAMA_URL = settings.ollama_base_url  # e.g. "http://127.0.0.1:11434"
+OLLAMA_MODEL = settings.ollama_model  # e.g. "llama3.2:1b"
 
-DEBUG = os.getenv("WALDUR_WORKER_DEBUG", "0") == "1" # For testing locally
+DEBUG = os.getenv("WALDUR_WORKER_DEBUG", "0") == "1"  # For testing locally
 logger = structlog.get_logger(__name__)
 WORKER_ID = os.getenv("WORKER_ID", f"pid-{os.getpid()}")
 
@@ -31,6 +29,7 @@ _OPTION_TYPES = {
     "num_predict": int,
     "repeat_penalty": float,
 }
+
 
 def _coerce_option_value(key: str, value):
     """Try to coerce strings like '0.2' -> 0.2 for float keys, etc."""
@@ -50,6 +49,7 @@ def _coerce_option_value(key: str, value):
         pass
     return value  # fall back as-is; Ollama may still reject
 
+
 def _extract_messages_and_options(job: dict) -> tuple[list[dict], dict]:
     """
     Keep it simple for now: always wrap LangServe's input string into a single-user message.
@@ -61,6 +61,7 @@ def _extract_messages_and_options(job: dict) -> tuple[list[dict], dict]:
         if k in cfg and cfg[k] is not None:
             options[k] = _coerce_option_value(k, cfg[k])
     return messages, options
+
 
 async def stream_ollama_chat(messages: list[dict], options: dict | None = None):
     if not OLLAMA_MODEL:
@@ -99,8 +100,10 @@ async def stream_ollama_chat(messages: list[dict], options: dict | None = None):
                     # tolerate split/partial lines
                     pass
 
+
 async def main():
-    r = Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, decode_responses=True)
+    r = get_redis()
+    await r.ping()
     while True:
         _, job_json = await r.blpop(QUEUE, timeout=0)
         job = json.loads(job_json)
@@ -158,6 +161,7 @@ async def main():
             await r.publish(channel, json.dumps({"type": "error", "message": str(e)}))
         finally:
             await r.publish(channel, json.dumps({"type": "end"}))
+
 
 if __name__ == "__main__":
     asyncio.run(main())

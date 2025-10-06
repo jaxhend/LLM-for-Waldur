@@ -11,8 +11,8 @@ def get_redis() -> Redis:
         host = settings.redis_host
         port = settings.redis_port
         pwd = settings.redis_password or None
-        db = settings.redis_db
-        _redis = Redis(host=host, port=port, password=pwd, db=db, decode_responses=True)
+
+        _redis = Redis(host=host, port=port, password=pwd, decode_responses=True)
     return _redis
 
 

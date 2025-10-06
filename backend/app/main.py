@@ -2,6 +2,7 @@ import structlog
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from langserve import add_routes
+from redis.asyncio import Redis
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from .chains.chat import build_chat_chain
@@ -58,6 +59,33 @@ async def exception_handler(request: Request, exc: Exception):
         content={"detail": "Internal Server Error"},
     )
 
+@app.get("/health")
+async def health_check():
+    """
+    Lightweight health check endpoint.
+    Verifies Redis connectivity and returns basic status info.
+    """
+    try:
+        r = Redis(
+            host=settings.redis_host,
+            port=settings.redis_port,
+            db=int(settings.redis_db),
+            password=settings.redis_password or None,
+            decode_responses=True,
+        )
+        pong = await r.ping()
+        await r.aclose()
+        redis_ok = pong is True
+    except Exception as e:
+        redis_ok = False
+        logger.warning("health.redis_unavailable", error=str(e))
+
+    return {
+        "status": "ok" if redis_ok else "degraded",
+        "redis": redis_ok,
+        "env": settings.env,
+        "model": settings.ollama_model,
+    }
 
 # LangServe routes:
 chain = build_chat_chain()
