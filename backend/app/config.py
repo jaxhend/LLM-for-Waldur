@@ -6,8 +6,6 @@ class Settings:
 
     def __init__(self) -> None:
         self.env: str = os.getenv("NODE_ENV", "development")
-        self.ollama_base_url: str = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
-
         self.ollama_model: str = "gemma3:27b" if self.env == "production" else "llama3.2:1b"
 
         self.postgres_user: str = os.getenv("POSTGRES_USER", "postgres")
