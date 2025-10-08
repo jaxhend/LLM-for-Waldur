@@ -8,6 +8,7 @@ from .chains.chat import build_chat_chain
 from .config import settings
 from .services.logging import setup_logging
 from .services.request_context import RequestContextMiddleware
+from .routes.usage import router as usage_router
 
 setup_logging()
 logger = structlog.get_logger()
@@ -58,6 +59,9 @@ async def exception_handler(request: Request, exc: Exception):
         content={"detail": "Internal Server Error"},
     )
 
+
+# Route for DB usage logs
+app.include_router(usage_router)
 
 # LangServe routes:
 chain = build_chat_chain()
