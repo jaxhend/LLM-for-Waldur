@@ -1,18 +1,21 @@
-@base = http://127.0.0.1:8000
+### Live tests
+@base_live= https://llm.testing.waldur.com/
 
 ### Streaming (SSE)
-POST {{base}}/api/lc/chat/stream
+POST {{base_live}}/api/lc/chat/stream
 Accept: text/event-stream
 Cache-Control: no-cache
 Content-Type: application/json
 
 {"input":"Explain RAG in one sentence."}
 
-### Non-stream (for comparison)
-POST {{base}}/api/lc/chat/invoke
+
+### Non-stream
+POST {{base_live}}/api/lc/chat/invoke
 Content-Type: application/json
 
 {"input":"Explain RAG in one sentence."}
 ###
 
-GET {{base}}/health
+
+GET {{base_live}}/api/health
