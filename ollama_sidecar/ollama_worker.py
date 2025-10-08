@@ -16,7 +16,6 @@ OLLAMA_MODEL = "gemma3:27b" if os.getenv("NODE_ENV",
                                          "development") == "production" else "llama3.2:1b"
 
 logger = structlog.get_logger(__name__)
-WORKER_ID = os.getenv("WORKER_ID", f"pid-{os.getpid()}")
 
 # Allowed options + desired type.
 # NOTE: Not in use currently, but could be extended.
@@ -107,7 +106,7 @@ async def main():
         prompt = job.get("input", "")
         channel = f"ollama:result:{job_id}"
 
-        logger.info("worker.job.received", worker_id=WORKER_ID, job_id=job_id, queue=REDIS_QUEUE, preview=prompt[:120])
+        logger.info("worker.job.received", job_id=job_id, queue=REDIS_QUEUE, preview=prompt[:120])
 
         try:
             messages, options = _extract_messages_and_options(job)
