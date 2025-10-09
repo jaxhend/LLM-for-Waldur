@@ -4,7 +4,7 @@ metadata:
   name: ollama
   namespace: llm-testing-waldur-com
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app: ollama
@@ -16,7 +16,18 @@ spec:
       containers:
         - name: ollama-model
           image: ghcr.io/jaxhend/llm-for-waldur/ollama:gemma3
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Never
+          readinessProbe:
+            exec:
+              command: ["true"]
+            initialDelaySeconds: 0
+            periodSeconds: 1
+          livenessProbe:
+            exec:
+              command: ["true"]
+            initialDelaySeconds: 0
+            periodSeconds: 5
+
           resources:
             limits:
               nvidia.com/gpu: 1
@@ -25,6 +36,16 @@ spec:
         - name: ollama-worker
           image: ghcr.io/jaxhend/llm-for-waldur/ollama_worker:latest
           imagePullPolicy: IfNotPresent
+          readinessProbe:
+            exec:
+              command: ["true"]
+            initialDelaySeconds: 0
+            periodSeconds: 1
+          livenessProbe:
+            exec:
+              command: ["true"]
+            initialDelaySeconds: 0
+            periodSeconds: 5
           env:
             - name: REDIS_HOST
               value: "redis"
