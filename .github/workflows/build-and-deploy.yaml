@@ -31,7 +31,7 @@ jobs:
               - 'deploy/images/Containerfile.frontend'
               - 'deploy/k8s/frontend*'
             ollama-worker:
-              - 'ollama-worker/**'
+              - 'ollama_worker/**'
               - 'deploy/images/Containerfile.ollama*'
               - 'deploy/k8s/ollama*'
 
