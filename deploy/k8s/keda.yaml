@@ -1,0 +1,34 @@
+# Applied manually with: kubectl apply -f deploy/k8s/keda.yaml
+
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: redis-list-auth
+  namespace: llm-testing-waldur-com
+spec:
+  secretTargetRef:
+    - parameter: password
+      name: redis-secret
+      key: redis-password
+
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: ollama-worker-scaler
+  namespace: llm-testing-waldur-com
+spec:
+  scaleTargetRef:
+    name: ollama
+  minReplicaCount: 0
+  maxReplicaCount: 2
+  cooldownPeriod: 300
+  triggers:
+    - type: redis
+      metadata:
+        address: redis:6379
+        listName: ollama-queue
+        listLength: "1"
+        pollingInterval: "1"  # seconds
+      authenticationRef:
+        name: redis-list-auth

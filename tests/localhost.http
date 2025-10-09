@@ -1,0 +1,21 @@
+### Localhost API tests
+@base = http://127.0.0.1:8000
+
+### Streaming (SSE)
+POST {{base}}/api/lc/chat/stream
+Accept: text/event-stream
+Cache-Control: no-cache
+Content-Type: application/json
+
+{"input":"Explain RAG in one sentence."}
+
+
+### Non-stream
+POST {{base}}/api/lc/chat/invoke
+Content-Type: application/json
+
+{"input":"Write me a 500 word essay on the history of Rome."}
+###
+
+
+GET {{base}}/api/health

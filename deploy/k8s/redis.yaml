@@ -9,7 +9,6 @@ data:
     bind 0.0.0.0
     protected-mode yes
     port 6379
-    requirepass ${REDIS_PASSWORD}
     save 900 1
     save 300 10
     save 60 10000
@@ -55,28 +54,35 @@ spec:
       labels:
         app: redis
     spec:
-      containers:
-        - name: redis
-          image: redis:8.2-alpine
-          args: ["redis-server", "/etc/redis/redis.conf"]
-          volumeMounts:
-            - name: redis-conf
-              mountPath: /etc/redis/redis.conf
-              subPath: redis.conf
+      initContainers:
+        - name: copy-redis-conf
+          image: registry.hpc.ut.ee/mirror/library/busybox:1.37
+          command: [ "sh", "-c" ]
+          args:
+            - cp /config/redis.conf /data/redis.conf; echo "requirepass $REDIS_PASSWORD" >> /data/redis.conf
           env:
             - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: redis-secret
                   key: redis-password
-            - name: REDISCLI_AUTH
-              valueFrom:
-                secretKeyRef:
-                  name: redis-secret
-                  key: redis-password
+          volumeMounts:
+            - name: redis-conf
+              mountPath: /config
+            - name: redis-data
+              mountPath: /data
+      containers:
+        - name: redis
+          image: registry.hpc.ut.ee/mirror/library/redis:8.2-alpine
+          command: [ "redis-server" ]
+          args:
+            - "/data/redis.conf"
           ports:
             - containerPort: 6379
               name: redis
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
       volumes:
         - name: redis-conf
           configMap:
@@ -84,12 +90,11 @@ spec:
             items:
               - key: redis.conf
                 path: redis.conf
-
   volumeClaimTemplates:
     - metadata:
         name: redis-data
       spec:
-        accessModes: ["ReadWriteOnce"]
+        accessModes: [ "ReadWriteOnce" ]
         resources:
           requests:
             storage: 10Gi

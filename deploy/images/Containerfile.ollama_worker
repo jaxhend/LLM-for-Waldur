@@ -1,22 +1,19 @@
 # Base image
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
-WORKDIR /backend
+WORKDIR /ollama_worker
 
-# Copy backend source code (context is ./backend)
-COPY ./ /backend
-WORKDIR /backend
+# Copy backend source code (context is ./ollama_worker)
+COPY ./ /ollama_worker
+WORKDIR /ollama_worker
 
 # Add non-root user
 RUN useradd --system --create-home --home-dir /home/appuser appuser \
-    && chown -R appuser /backend
+    && chown -R appuser /ollama_worker
 USER appuser
 
 # Install Python dependencies from pyproject.toml
 RUN uv sync
 
-# Expose FastAPI port
-EXPOSE 8000
-
 # Production entrypoint with Gunicorn + Uvicorn workers
-CMD ["uv", "run", "gunicorn", "-c", "app/gunicorn_conf.py", "app.main:app"]
+CMD ["uv", "run", "ollama_worker.py"]

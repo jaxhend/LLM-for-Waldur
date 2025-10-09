@@ -4,7 +4,7 @@ metadata:
   name: ollama
   namespace: llm-testing-waldur-com
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app: ollama
@@ -14,29 +14,54 @@ spec:
         app: ollama
     spec:
       containers:
-        - name: ollama
+        - name: ollama-model
           image: ghcr.io/jaxhend/llm-for-waldur/ollama:gemma3
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 11434
+          imagePullPolicy: Never
+          readinessProbe:
+            exec:
+              command: [ "true" ]
+            initialDelaySeconds: 0
+            periodSeconds: 1
+          livenessProbe:
+            exec:
+              command: [ "true" ]
+            initialDelaySeconds: 0
+            periodSeconds: 5
+
           resources:
             limits:
               nvidia.com/gpu: 1
-          command: ["ollama", "serve"]
+          command: [ "ollama", "serve" ]
+
+        - name: ollama-worker
+          image: ghcr.io/jaxhend/llm-for-waldur/ollama_worker:latest
+          imagePullPolicy: IfNotPresent
+          readinessProbe:
+            exec:
+              command: [ "true" ]
+            initialDelaySeconds: 0
+            periodSeconds: 1
+          livenessProbe:
+            exec:
+              command: [ "true" ]
+            initialDelaySeconds: 0
+            periodSeconds: 5
+          env:
+            - name: REDIS_HOST
+              value: "redis"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_QUEUE
+              value: "ollama-queue"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secret
+                  key: redis-password
+            - name: NODE_ENV
+              value: "production"
+
       tolerations:
         - key: nvidia.com/gpu
           operator: Exists
           effect: NoSchedule
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: ollama
-  namespace: llm-testing-waldur-com
-spec:
-  selector:
-    app: ollama
-  ports:
-    - port: 11434
-      targetPort: 11434
-  type: ClusterIP
