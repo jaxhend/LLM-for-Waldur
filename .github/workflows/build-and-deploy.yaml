@@ -45,7 +45,7 @@ jobs:
         uses: ./.github/actions/kube-setup
         with:
           kubeconfig-content: ${{ secrets.KUBECONFIG_CONTENT }}
-      - run: kubectl apply -f deploy/k8s/
+      - run: kubectl apply -f deploy/k8s/ --exclude=deploy/k8s/keda.yaml # The account doesn't have permissions for KEDA CRDs
 
   build-backend:
     runs-on: ubuntu-latest
@@ -136,7 +136,7 @@ jobs:
             -t $WORKER_IMAGE:latest \
             -t $WORKER_IMAGE:$IMAGE_TAG \
             --push \
-            ./ollama-worker
+            ./ollama_worker
           rm -rf ${CACHE_DIR}
           mv ${CACHE_DIR}-new ${CACHE_DIR}
 

@@ -1,3 +1,5 @@
+# Applied manually with: kubectl apply -f deploy/k8s/keda.yaml
+
 apiVersion: keda.sh/v1alpha1
 kind: TriggerAuthentication
 metadata:
