@@ -57,7 +57,7 @@ spec:
       initContainers:
         - name: copy-redis-conf
           image: registry.hpc.ut.ee/mirror/library/busybox:1.37
-          command: ["sh", "-c"]
+          command: [ "sh", "-c" ]
           args:
             - cp /config/redis.conf /data/redis.conf; echo "requirepass $REDIS_PASSWORD" >> /data/redis.conf
           env:
@@ -74,7 +74,7 @@ spec:
       containers:
         - name: redis
           image: registry.hpc.ut.ee/mirror/library/redis:8.2-alpine
-          command: ["redis-server"]
+          command: [ "redis-server" ]
           args:
             - "/data/redis.conf"
           ports:
@@ -94,7 +94,7 @@ spec:
     - metadata:
         name: redis-data
       spec:
-        accessModes: ["ReadWriteOnce"]
+        accessModes: [ "ReadWriteOnce" ]
         resources:
           requests:
             storage: 10Gi

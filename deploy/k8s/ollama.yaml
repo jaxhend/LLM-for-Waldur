@@ -19,31 +19,31 @@ spec:
           imagePullPolicy: Never
           readinessProbe:
             exec:
-              command: ["true"]
+              command: [ "true" ]
             initialDelaySeconds: 0
             periodSeconds: 1
           livenessProbe:
             exec:
-              command: ["true"]
+              command: [ "true" ]
             initialDelaySeconds: 0
             periodSeconds: 5
 
           resources:
             limits:
               nvidia.com/gpu: 1
-          command: ["ollama", "serve"]
+          command: [ "ollama", "serve" ]
 
         - name: ollama-worker
           image: ghcr.io/jaxhend/llm-for-waldur/ollama_worker:latest
           imagePullPolicy: IfNotPresent
           readinessProbe:
             exec:
-              command: ["true"]
+              command: [ "true" ]
             initialDelaySeconds: 0
             periodSeconds: 1
           livenessProbe:
             exec:
-              command: ["true"]
+              command: [ "true" ]
             initialDelaySeconds: 0
             periodSeconds: 5
           env:
