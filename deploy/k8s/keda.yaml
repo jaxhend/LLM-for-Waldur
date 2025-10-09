@@ -29,6 +29,6 @@ spec:
         address: redis:6379
         listName: ollama-queue
         listLength: "1"
-        pollingInterval: "5"  # seconds
+        pollingInterval: "1"  # seconds
       authenticationRef:
         name: redis-list-auth
