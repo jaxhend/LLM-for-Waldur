@@ -5,6 +5,7 @@ import {
     ErrorPrimitive,
     MessagePrimitive,
     ThreadPrimitive,
+    useAssistantState
 } from "@assistant-ui/react";
 import {
     ArrowDownIcon,
@@ -17,13 +18,11 @@ import {
     RefreshCwIcon,
     Square,
 } from "lucide-react";
+import {FeedbackProvider} from "@/components/feedback-context";
+import {FeedbackPanel} from "@/components/feedback-panel";
+import {FeedbackButton} from "@/components/ui/feedback-button";
 import type { FC } from "react";
 
-import {
-    ComposerAddAttachment,
-    ComposerAttachments,
-    UserMessageAttachments,
-} from "@/components/attachment";
 import { MarkdownText } from "@/components/markdown-text";
 import { ToolFallback } from "@/components/tool-fallback";
 import { TooltipIconButton } from "@/components/tooltip-icon-button";
@@ -161,7 +160,7 @@ const Composer: FC = () => {
                 <ThreadWelcomeSuggestions />
             </ThreadPrimitive.Empty>
             <ComposerPrimitive.Root className="aui-composer-root relative flex w-full flex-col rounded-3xl border border-border bg-muted px-1 pt-2 shadow-[0_9px_9px_0px_rgba(0,0,0,0.01),0_2px_5px_0px_rgba(0,0,0,0.06)] dark:border-muted-foreground/15">
-                <ComposerAttachments />
+                {/*<ComposerAttachments />*/}
                 <ComposerPrimitive.Input
                     placeholder="Send a message..."
                     className="aui-composer-input mb-1 max-h-32 min-h-16 w-full resize-none bg-transparent px-3.5 pt-1.5 pb-3 text-base outline-none placeholder:text-muted-foreground focus:outline-primary"
@@ -178,7 +177,8 @@ const Composer: FC = () => {
 const ComposerAction: FC = () => {
     return (
         <div className="aui-composer-action-wrapper relative mx-1 mt-2 mb-2 flex items-center justify-between">
-            <ComposerAddAttachment />
+            {/*<ComposerAddAttachment />*/}
+            <div className="w-6" /> {/* Placeholder for alignment */}
 
             <ThreadPrimitive.If running={false}>
                 <ComposerPrimitive.Send asChild>
@@ -250,29 +250,37 @@ const AssistantMessage: FC = () => {
 };
 
 const AssistantActionBar: FC = () => {
+    const threadMessages = useAssistantState(({ thread }) => thread.messages);
+
     return (
-        <ActionBarPrimitive.Root
-            hideWhenRunning
-            autohide="not-last"
-            autohideFloat="single-branch"
-            className="aui-assistant-action-bar-root col-start-3 row-start-2 -ml-1 flex gap-1 text-muted-foreground data-floating:absolute data-floating:rounded-md data-floating:border data-floating:bg-background data-floating:p-1 data-floating:shadow-sm"
-        >
-            <ActionBarPrimitive.Copy asChild>
-                <TooltipIconButton tooltip="Copy">
-                    <MessagePrimitive.If copied>
-                        <CheckIcon />
-                    </MessagePrimitive.If>
-                    <MessagePrimitive.If copied={false}>
-                        <CopyIcon />
-                    </MessagePrimitive.If>
-                </TooltipIconButton>
-            </ActionBarPrimitive.Copy>
-            <ActionBarPrimitive.Reload asChild>
-                <TooltipIconButton tooltip="Refresh">
-                    <RefreshCwIcon />
-                </TooltipIconButton>
-            </ActionBarPrimitive.Reload>
-        </ActionBarPrimitive.Root>
+        <FeedbackProvider>
+            <ActionBarPrimitive.Root
+                hideWhenRunning
+                autohide="not-last"
+                autohideFloat="single-branch"
+                className="aui-assistant-action-bar-root col-start-3 row-start-2 -ml-1 flex gap-1 text-muted-foreground data-floating:absolute data-floating:rounded-md data-floating:border data-floating:bg-background data-floating:p-1 data-floating:shadow-sm"
+            >
+                <ActionBarPrimitive.Copy asChild>
+                    <TooltipIconButton tooltip="Copy">
+                        <MessagePrimitive.If copied>
+                            <CheckIcon />
+                        </MessagePrimitive.If>
+                        <MessagePrimitive.If copied={false}>
+                            <CopyIcon />
+                        </MessagePrimitive.If>
+                    </TooltipIconButton>
+                </ActionBarPrimitive.Copy>
+                <ActionBarPrimitive.Reload asChild>
+                    <TooltipIconButton tooltip="Refresh">
+                        <RefreshCwIcon />
+                    </TooltipIconButton>
+                </ActionBarPrimitive.Reload>
+                <div className="flex justify-center items-center">
+                    <FeedbackButton />
+                    <FeedbackPanel threadMessages={threadMessages} user={"kasutaja"}/>
+                </div>
+            </ActionBarPrimitive.Root>
+        </FeedbackProvider>
     );
 };
 
@@ -283,7 +291,7 @@ const UserMessage: FC = () => {
                 className="aui-user-message-root mx-auto grid w-full max-w-[var(--thread-max-width)] animate-in auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] gap-y-2 px-2 py-4 duration-200 fade-in slide-in-from-bottom-1 first:mt-3 last:mb-5 [&:where(>*)]:col-start-2"
                 data-role="user"
             >
-                <UserMessageAttachments />
+                {/*<UserMessageAttachments />*/}
 
                 <div className="aui-user-message-content-wrapper relative col-start-2 min-w-0">
                     <div className="aui-user-message-content rounded-3xl bg-muted px-5 py-2.5 break-words text-foreground">
