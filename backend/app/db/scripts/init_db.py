@@ -1,7 +1,12 @@
 import asyncio
 
-from ...db import models #Ensure models are imported so that they are registered with Base. NOTE: don't remove this line
-
+# Ensure models are imported so that they are registered with Base. NOTE: don't remove this line
+from ..models import accounts
+from ..models import conversations
+from ..models import feedback
+from ..models import messages
+from ..models import runs
+from ..models import users
 from ..base import engine, Base
 
 
