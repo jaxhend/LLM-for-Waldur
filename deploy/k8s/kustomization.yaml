@@ -1,0 +1,8 @@
+# For workflow deployment to exclude KEDA due to permission issues.
+resources:
+  - backend.yaml
+  - cluster.yaml
+  - frontend.yaml
+  - ingress.yaml
+  - ollama.yaml
+  - redis.yaml

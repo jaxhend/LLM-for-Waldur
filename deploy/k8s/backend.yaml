@@ -22,8 +22,6 @@ spec:
           env:
             - name: NODE_ENV
               value: "production"
-            - name: OLLAMA_BASE_URL
-              value: "http://ollama:11434"
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
@@ -38,6 +36,17 @@ spec:
               value: "appdb"
             - name: POSTGRES_HOST
               value: "pg-cluster-rw"
+            - name: REDIS_HOST
+              value: "redis"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_QUEUE
+              value: "ollama-queue"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secret
+                  key: redis-password
       resources:
         requests:
           memory: "128Mi"

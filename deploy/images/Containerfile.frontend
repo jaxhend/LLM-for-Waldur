@@ -2,11 +2,8 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Install git
-RUN apk add --no-cache git bash
-
-# Copy frontend source code
-COPY frontend/ ./frontend
+# Copy frontend source code (context is ./frontend)
+COPY . ./frontend
 
 WORKDIR /app/frontend
 
