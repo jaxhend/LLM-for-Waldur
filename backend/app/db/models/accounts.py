@@ -12,4 +12,4 @@ class Accounts(Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
 
-    users = relationship("Users", back_populates="Accounts", cascade="all, delete-orphan")
+    users = relationship("Users", back_populates="accounts", cascade="all, delete-orphan")

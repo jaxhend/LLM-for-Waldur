@@ -12,7 +12,7 @@ class Runs(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
-    conversation_id: Mapped[int] = mapped_column(Integer, ForeignKey("conversations.id"), nullable=False)
+    thread_id: Mapped[int] = mapped_column(Integer, ForeignKey("threads.id"), nullable=False)
     message_id: Mapped[int] = mapped_column(Integer, ForeignKey("messages.id"), nullable=False)
     model_name: Mapped[str] = mapped_column(VARCHAR, nullable=False)
     input_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -21,6 +21,7 @@ class Runs(Base):
     cost_cents: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=func.now())
 
-    conversation = relationship("Conversations", back_populates="Runs")
-    user = relationship("Users", back_populates="Runs")
-    message = relationship("Messages", back_populates="Runs")
+    threads = relationship("Threads", back_populates="runs")
+    users = relationship("Users", back_populates="runs")
+    feedback = relationship("Feedback", back_populates="runs", cascade="all, delete-orphan")
+    messages = relationship("Messages", back_populates="runs")

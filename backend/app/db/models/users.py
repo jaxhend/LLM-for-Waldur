@@ -15,7 +15,7 @@ class Users(Base):
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=func.now())
 
-    account = relationship("Accounts", back_populates="Users")
-    conversations = relationship("Conversations", back_populates="users", cascade="all, delete-orphan")
-    Runs = relationship("Runs", back_populates="User", cascade="all, delete-orphan")
-    feedback = relationship("Feedback", back_populates="Users", cascade="all, delete-orphan")
+    accounts = relationship("Accounts", back_populates="users")
+    threads = relationship("Threads", back_populates="users", cascade="all, delete-orphan")
+    runs = relationship("Runs", back_populates="users", cascade="all, delete-orphan")
+    feedback = relationship("Feedback", back_populates="users", cascade="all, delete-orphan")

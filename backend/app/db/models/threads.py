@@ -6,8 +6,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from ..base import Base
 
 
-class Conversations(Base):
-    __tablename__ = "conversations"
+class Threads(Base):
+    __tablename__ = "threads"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
@@ -15,5 +15,6 @@ class Conversations(Base):
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=func.now())
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
 
-    user = relationship("Users", back_populates="Conversations")
-    messages = relationship("Messages", back_populates="Conversations", cascade="all, delete-orphan")
+    users = relationship("Users", back_populates="threads")
+    messages = relationship("Messages", back_populates="threads", cascade="all, delete-orphan")
+    runs = relationship("Runs", back_populates="threads", cascade="all, delete-orphan")
