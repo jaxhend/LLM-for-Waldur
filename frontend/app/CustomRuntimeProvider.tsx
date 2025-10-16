@@ -76,6 +76,10 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
                 (conversationHistory ? conversationHistory + "\n" : "") +
                 `user: ${userMessageText}`
 
+            const turn = Math.floor(messages.length / 2);
+
+            const thread_id = 1;
+
             const BASE_API_URL: string =
                 process.env.NODE_ENV === "production"
                     ? "https://llm.testing.waldur.com"
@@ -89,7 +93,15 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
                     headers: {
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({input: prompt}),
+                    body: JSON.stringify({
+                        input: prompt,
+                        config: {
+                            configurable: {
+                                thread_id: thread_id,
+                                turn: turn
+                            }
+                        }
+                    }),
                     signal: abortSignal,
                 });
 
@@ -116,7 +128,15 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({input: prompt}),
+                body: JSON.stringify({
+                    input: prompt,
+                    config: {
+                        configurable: {
+                            thread_id: thread_id,
+                            turn: turn
+                        }
+                    }
+                }),
                 signal: abortSignal,
             });
 

@@ -7,19 +7,25 @@ from langchain_core.messages import AIMessageChunk, AIMessage
 from langchain_core.runnables import Runnable
 
 from ..config import settings
+from ..db.deps import get_db
 from ..redis.redis_conn import get_redis
+from ..routers.messages import create_conversation_turn, logger
+from ..schemas.messages import ConversationTurnCreate
+
 
 class RedisQueueRunnable(Runnable):
     """
         Sends a job to Redis LIST (RPUSH) and streams back results
         from Pub/Sub channel: ollama:result:{job_id}
 
+        Also logs conversations to database when db session is provided in config.
         Expected worker messages (JSON on Pub/Sub):
           {"type":"chunk","content":"..."}       -> streamed token(s)
           {"type":"metadata","usage":{...}}      -> optional usage/token counts
           {"type":"error","message":"..."}       -> raises
           {"type":"end"}                         -> completes
     """
+
     async def _stream_from_pubsub(self, job_id: str) -> AsyncIterator[AIMessageChunk]:
         redis = get_redis()
         channel = f"ollama:result:{job_id}"
@@ -51,21 +57,56 @@ class RedisQueueRunnable(Runnable):
                 pass
             await pubsub.close()
 
-# ------------------- Async interfaces LangServe uses -------------------
-    async def astream(self, input: str, config: Dict[str,Any] | None = None):
+    # ------------------- Async interfaces LangServe uses -------------------
+    async def astream(self, input: str, config: Dict[str, Any] | None = None):
+
+        # Extract DB logging config
+        configurable = (config or {}).get("configurable", {})
+        thread_id = configurable.get("thread_id")
+        turn = configurable.get("turn")
+
         # 1) Enqueue
         job_id = str(uuid.uuid4())
         payload = {
             "id": job_id,
             "input": input,
-            "config": (config or {}).get("configurable", {}),
+            "config": configurable
         }
         redis = get_redis()
         await redis.rpush(settings.redis_queue, json.dumps(payload))
 
-        # 2) Stream results back
+        # 2) Stream results and collect response
+        collected_response: list[str] = []
         async for chunk in self._stream_from_pubsub(job_id):
+            if isinstance(chunk, AIMessageChunk) and chunk.content:
+                collected_response.append(chunk.content)
             yield chunk
+
+        # 3) Save to DB after streaming completes
+        if thread_id is not None and turn is not None:
+            db_gen = get_db()
+            db = await anext(db_gen)
+            try:
+                turn_in = ConversationTurnCreate(
+                    thread_id=thread_id,
+                    turn=turn,
+                    user_message=input,
+                    assistant_response="".join(collected_response)
+                )
+
+                await create_conversation_turn(
+                    turn_data=turn_in,
+                    db=db
+                )
+
+            except Exception as e:
+                # Log error but don't fail the whole request if DB logging fails
+                logger.warning("db.log_failed", error=str(e), thread_id=thread_id, turn=turn)
+            finally:
+                try:
+                    await anext(db_gen)
+                except StopAsyncIteration:
+                    pass
 
     async def ainvoke(self, input: str, config: Dict[str, Any] | None = None) -> AIMessage:
 
@@ -88,10 +129,10 @@ class RedisQueueRunnable(Runnable):
         return AIMessage(
             content="".join(parts),
             additional_kwargs=({"usage_metadata": usage_agg} if usage_agg else {}),
-        response_metadata=response_md
+            response_metadata=response_md
         )
 
-# ------------------- Sync wrappers to satisfy Runnable abstract methods -------------------
+    # ------------------- Sync wrappers to satisfy Runnable abstract methods -------------------
     def invoke(self, input: str, config: Dict[str, Any] | None = None) -> AIMessage:
         try:
             asyncio.get_running_loop()
