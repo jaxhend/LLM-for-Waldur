@@ -19,3 +19,74 @@ Content-Type: application/json
 
 
 GET {{base}}/api/health
+
+
+### DB TESTS
+### Create a conversation turn (user message + assistant response)
+POST {{base}}/api/messages/turn
+Content-Type: application/json
+
+{
+  "thread_id": 1,
+  "turn": 0,
+  "user_message": "What is Waldur?",
+  "assistant_response": "Waldur is a platform for managing cloud resources and services."
+}
+
+###
+
+### Create another conversation turn
+POST {{base}}/api/messages/turn
+Content-Type: application/json
+
+{
+  "thread_id": 1,
+  "turn": 1,
+  "user_message": "Can you explain RAG?",
+  "assistant_response": "RAG (Retrieval-Augmented Generation) is a technique that combines information retrieval with language model generation to provide more accurate and contextual responses."
+}
+
+###
+
+### Get all messages in a thread
+GET {{base}}/api/messages/thread/1
+
+###
+
+### Get messages from a specific turn
+GET {{base}}/api/messages/thread/1/turn/0
+
+###
+
+### Get messages from turn 1
+GET {{base}}/api/messages/thread/1/turn/1
+
+###
+
+### Get a specific message by ID
+GET {{base}}/api/messages/1
+
+###
+
+### Test with non-existent thread (should return 404)
+POST {{base}}/api/messages/turn
+Content-Type: application/json
+
+{
+  "thread_id": 9999,
+  "turn": 0,
+  "user_message": "This should fail",
+  "assistant_response": "Thread doesn't exist"
+}
+
+###
+
+### Test with non-existent turn (should return 404)
+GET {{base}}/api/messages/thread/1/turn/999
+
+###
+
+### Test with non-existent message ID (should return 404)
+GET {{base}}/api/messages/99999
+
+###
