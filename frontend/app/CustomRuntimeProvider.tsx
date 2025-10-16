@@ -4,8 +4,9 @@ import type {ReactNode} from "react";
 import {
     AssistantRuntimeProvider,
     useLocalRuntime,
-    type ChatModelAdapter, ThreadUserMessagePart, ThreadMessage
+    type ChatModelAdapter, ThreadUserMessagePart, ThreadMessage, ChatModelRunResult
 } from "@assistant-ui/react";
+import {resolveAssistantMessageId} from "@/lib/messages";
 
 type Mode = "stream" | "invoke";
 
@@ -118,7 +119,22 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
                     json?.output?.content ??
                     json?.content ??
                     ""; // tolerancy of shapes
-                yield   {content: [{type: "text", text}]};
+
+                const messageId = await resolveAssistantMessageId(thread_id, turn);
+
+                const result: ChatModelRunResult = {
+                    content: [{type: "text", text}],
+                    metadata: {
+                        custom: {
+                            thread_id: thread_id,
+                            turn: turn,
+                            role: "assistant",
+                            message_id: messageId
+                        }
+                    },
+                };
+
+                yield result;
                 return;
             }
 
@@ -139,6 +155,7 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
                 }),
                 signal: abortSignal,
             });
+
 
             if (!response.ok) {
                 const body = await response.text().catch(() => "");
@@ -167,13 +184,38 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
                         const piece = processChatbotLine(line);
                         if (piece) {
                             text += piece;
-                            yield {content: [{type: "text", text}]}
+                            yield {
+                                content: [{type: "text", text: text}],
+                                metadata: {
+                                    custom: {
+                                        thread_id: thread_id,
+                                        turn: turn,
+                                        role: "assistant"
+                                    }
+                                }
+                            } as ChatModelRunResult
+
+
                         }
                     }
+
                 }
             } finally {
                 reader.releaseLock();
             }
+            const messageId = await resolveAssistantMessageId(thread_id, turn, {signal: abortSignal});
+
+
+            yield {
+                metadata: {
+                    custom: {
+                        thread_id: thread_id,
+                        turn: turn,
+                        role: "assistant",
+                        message_id: messageId
+                    }
+                }
+            } as ChatModelRunResult
         },
     };
 }

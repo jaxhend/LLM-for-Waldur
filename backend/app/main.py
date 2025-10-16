@@ -9,7 +9,7 @@ from .chains.chat import build_chat_chain
 from .config import settings
 from .db.deps import get_db
 from .redis.redis_conn import get_redis
-from .routers import messages
+from .routers import messages, feedback
 from .services.logging import setup_logging
 from .services.request_context import RequestContextMiddleware
 from .routers.usage import router as usage_router
@@ -93,6 +93,8 @@ app.include_router(usage_router)
 # Route for message transactions
 app.include_router(messages.router)
 
+app.include_router(feedback.router)
+
 # LangServe routers:
 chain = build_chat_chain()
 
@@ -104,9 +106,8 @@ async def per_req_config_modifier(config: dict, request: Request) -> dict:
 
     cfg = (config.get("configurable") or {}).copy()
 
-
     try:
-       if request.headers.get("content-type").startswith("application/json"):
+        if request.headers.get("content-type").startswith("application/json"):
             body = await request.json()
             client_cfg = ((body.get("config") or {}).get("configurable") or {})
             if "thread_id" in client_cfg and client_cfg["thread_id"] is not None:

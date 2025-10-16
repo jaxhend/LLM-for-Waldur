@@ -21,3 +21,11 @@ class ConversationTurnCreate(BaseModel):
     turn: int
     user_message: str
     assistant_response: str
+
+
+class MessageIdRole(BaseModel):
+    id: int
+    role: str
+
+    class Config:
+        from_attributes = True

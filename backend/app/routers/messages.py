@@ -5,10 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
 from ..db.deps import get_db
 from ..db.models import Threads, Messages
-from ..schemas.messages import ConversationTurnCreate, MessageResponse
+from ..schemas.messages import ConversationTurnCreate, MessageResponse, MessageIdRole
 
 logger = structlog.get_logger()
 
@@ -36,7 +35,6 @@ async def create_conversation_turn(
                 status_code=404,
                 detail=f"Thread ID {turn_data.thread_id} not found"
             )
-
 
         # Create user message
         user_msg = Messages(
@@ -107,7 +105,7 @@ async def get_messages_by_thread(
         )
 
 
-@router.get("/thread/{thread_id}/turn/{turn}", response_model=List[MessageResponse])
+@router.get("/thread/{thread_id}/turn/{turn}", response_model=List[MessageIdRole])
 async def get_messages_by_turn(
         thread_id: int,
         turn: int,
@@ -115,19 +113,18 @@ async def get_messages_by_turn(
 ):
     try:
         result = await db.execute(
-            select(Messages)
+            select(Messages.id, Messages.role)
             .where(Messages.thread_id == thread_id, Messages.turn == turn)
-            .order_by(Messages.id)
         )
-        messages = result.scalars().all()
+        rows = result.all()
 
-        if not messages:
+        if not rows:
             raise HTTPException(
                 status_code=404,
                 detail=f"No messages found for thread ID {thread_id}, turn {turn}"
             )
 
-        return messages
+        return [{"id": row.id, "role": row.role} for row in rows]
 
     except HTTPException:
         raise
@@ -137,6 +134,7 @@ async def get_messages_by_turn(
             status_code=500,
             detail="Failed to retrieve messages"
         )
+
 
 @router.get("/{message_id}", response_model=MessageResponse)
 async def get_message(
