@@ -17,5 +17,4 @@ class Users(Base):
 
     accounts = relationship("Accounts", back_populates="users")
     threads = relationship("Threads", back_populates="users", cascade="all, delete-orphan")
-    runs = relationship("Runs", back_populates="users", cascade="all, delete-orphan")
-    feedback = relationship("Feedback", back_populates="users", cascade="all, delete-orphan")
+
