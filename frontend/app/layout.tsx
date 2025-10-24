@@ -2,7 +2,7 @@ import "./globals.css";
 import type {Metadata} from "next";
 import type {ReactNode} from "react";
 import {Geist, Geist_Mono} from "next/font/google";
-import {CustomRuntimeProvider} from "@/app/CustomRuntimeProvider";
+import {MyRuntimeProvider} from "./MyRuntimeProvider";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -27,9 +27,9 @@ export default function RootLayout({
     return (
         <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
         <body>
-        <CustomRuntimeProvider mode="stream">
+        <MyRuntimeProvider>
             {children}
-        </CustomRuntimeProvider>
+        </MyRuntimeProvider>
         </body>
         </html>
     );
