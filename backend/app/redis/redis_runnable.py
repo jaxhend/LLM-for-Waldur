@@ -50,7 +50,7 @@ class RedisQueueRunnable(Runnable):
                     md = data.get("usage", {})
                     yield AIMessageChunk(
                         content="",
-                         additional_kwargs={
+                        additional_kwargs={
                             "usage_metadata": md,
                             "model_name": data.get("response_metadata", {}).get("model")})
                 elif t == "error":
@@ -64,12 +64,11 @@ class RedisQueueRunnable(Runnable):
                 pass
             await pubsub.close()
 
-
     async def ensure_thread_and_turn(
             self,
             db,
             configurable: Dict[str, Any] | None
-    ) -> tuple[int,int]:
+    ) -> tuple[int, int]:
         """
         Returns (thread_id, next_turn). If thread_id is not provided or invalid, creates a new thread.
         """
@@ -80,7 +79,7 @@ class RedisQueueRunnable(Runnable):
         if thread_id is not None:
             res = await db.execute(select(Threads.id).where(Threads.id == thread_id))
             if res.scalar_one_or_none() is None:
-               thread_id = None
+                thread_id = None
 
         if thread_id is None:
             t = Threads(user_id)
@@ -96,19 +95,16 @@ class RedisQueueRunnable(Runnable):
         next_turn = max_turn + 1
         return thread_id, next_turn
 
-
     # ------------------- Async interfaces LangServe uses -------------------
     async def astream(self, input: str, config: Dict[str, Any] | None = None):
 
         # Extract DB logging config
         configurable = (config or {}).get("configurable", {})
 
-
         db_gen = get_db()
         db = await anext(db_gen)
         try:
             thread_id, turn = await self.ensure_thread_and_turn(db, configurable)
-
 
             # 1) Enqueue
             job_id = str(uuid.uuid4())
@@ -153,7 +149,6 @@ class RedisQueueRunnable(Runnable):
                     turn_data=turn_in,
                     db=db
                 )
-
 
                 input_tokens = int(
                     usage_meta.get("input_tokens")
