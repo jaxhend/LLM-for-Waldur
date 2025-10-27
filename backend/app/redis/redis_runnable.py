@@ -5,10 +5,12 @@ from typing import AsyncIterator, Any, Dict, Iterator
 
 from langchain_core.messages import AIMessageChunk, AIMessage
 from langchain_core.runnables import Runnable
+from sqlalchemy import select, func
 
 from ..config import settings
 from ..db.crud.runs import create_run
 from ..db.deps import get_db
+from ..db.models import Threads, Messages
 from ..redis.redis_conn import get_redis
 from ..routers.messages import create_conversation_turn, logger
 from ..schemas.messages import ConversationTurnCreate
@@ -22,7 +24,7 @@ class RedisQueueRunnable(Runnable):
         Also logs conversations to database when db session is provided in config.
         Expected worker messages (JSON on Pub/Sub):
           {"type":"chunk","content":"..."}       -> streamed token(s)
-          {"type":"metadata","usage":{...}}      -> optional usage/token counts
+          {"type":"metadata","usage":{...}, "response_metadata": {"model": "..."}}      -> optional usage/token counts
           {"type":"error","message":"..."}       -> raises
           {"type":"end"}                         -> completes
     """
@@ -46,9 +48,11 @@ class RedisQueueRunnable(Runnable):
                     yield AIMessageChunk(content=data.get("content", ""))
                 elif t == "metadata":
                     md = data.get("usage", {})
-                    yield AIMessageChunk(content="", additional_kwargs={"usage_metadata": md,
-                                                                        "model_name": data.get("response_metadata",
-                                                                                               {}).get("model")})
+                    yield AIMessageChunk(
+                        content="",
+                         additional_kwargs={
+                            "usage_metadata": md,
+                            "model_name": data.get("response_metadata", {}).get("model")})
                 elif t == "error":
                     raise RuntimeError(data.get("message", "Worker error"))
                 elif t == "end":
@@ -60,47 +64,83 @@ class RedisQueueRunnable(Runnable):
                 pass
             await pubsub.close()
 
+
+    async def ensure_thread_and_turn(
+            self,
+            db,
+            configurable: Dict[str, Any] | None
+    ) -> tuple[int,int]:
+        """
+        Returns (thread_id, next_turn). If thread_id is not provided or invalid, creates a new thread.
+        """
+        cfg = configurable or {}
+        thread_id = cfg.get("thread_id")
+        user_id = cfg.get("user_id")
+
+        if thread_id is not None:
+            res = await db.execute(select(Threads.id).where(Threads.id == thread_id))
+            if res.scalar_one_or_none() is None:
+               thread_id = None
+
+        if thread_id is None:
+            t = Threads(user_id)
+            db.add(t)
+            await db.commit()
+            await db.refresh(t)
+            thread_id = t.id
+
+        q = await db.execute(
+            select(func.max(Messages.turn)).where(Messages.thread_id == thread_id)
+        )
+        max_turn = q.scalar() or 0
+        next_turn = max_turn + 1
+        return thread_id, next_turn
+
+
     # ------------------- Async interfaces LangServe uses -------------------
     async def astream(self, input: str, config: Dict[str, Any] | None = None):
 
         # Extract DB logging config
         configurable = (config or {}).get("configurable", {})
-        thread_id = configurable.get("thread_id")
-        turn = configurable.get("turn")
 
-        # 1) Enqueue
-        job_id = str(uuid.uuid4())
-        payload = {
-            "id": job_id,
-            "input": input,
-            "config": configurable
-        }
-        redis = get_redis()
-        await redis.rpush(settings.redis_queue, json.dumps(payload))
 
-        # 2) Stream results and collect response
-        collected_response: list[str] = []
-        usage_meta: Dict[str, Any] = {}
-        usage_model_name: str | None = None
+        db_gen = get_db()
+        db = await anext(db_gen)
+        try:
+            thread_id, turn = await self.ensure_thread_and_turn(db, configurable)
 
-        async for chunk in self._stream_from_pubsub(job_id):
-            if isinstance(chunk, AIMessageChunk):
-                if chunk.content:
-                    collected_response.append(chunk.content)
 
-                usage = (chunk.additional_kwargs or {}).get("usage_metadata")
-                if isinstance(usage, dict):
-                    usage_meta.update(usage)
+            # 1) Enqueue
+            job_id = str(uuid.uuid4())
+            payload = {
+                "id": job_id,
+                "input": input,
+                "config": configurable
+            }
+            redis = get_redis()
+            await redis.rpush(settings.redis_queue, json.dumps(payload))
 
-                model_from_chunk = (chunk.additional_kwargs or {}).get("model_name")
-                if model_from_chunk and not usage_model_name:
-                    usage_model_name = str(model_from_chunk)
-            yield chunk
+            # 2) Stream results and collect response
+            collected_response: list[str] = []
+            usage_meta: Dict[str, Any] = {}
+            usage_model_name: str | None = None
 
-        # 3) Save to DB after streaming completes
-        if thread_id is not None and turn is not None:
-            db_gen = get_db()
-            db = await anext(db_gen)
+            async for chunk in self._stream_from_pubsub(job_id):
+                if isinstance(chunk, AIMessageChunk):
+                    if chunk.content:
+                        collected_response.append(chunk.content)
+
+                    usage = (chunk.additional_kwargs or {}).get("usage_metadata")
+                    if isinstance(usage, dict):
+                        usage_meta.update(usage)
+
+                    model_from_chunk = (chunk.additional_kwargs or {}).get("model_name")
+                    if model_from_chunk and not usage_model_name:
+                        usage_model_name = str(model_from_chunk)
+                yield chunk
+
+            # 3) Save to DB after streaming completes
+
             try:
                 turn_in = ConversationTurnCreate(
                     thread_id=thread_id,
@@ -113,6 +153,7 @@ class RedisQueueRunnable(Runnable):
                     turn_data=turn_in,
                     db=db
                 )
+
 
                 input_tokens = int(
                     usage_meta.get("input_tokens")
@@ -127,24 +168,37 @@ class RedisQueueRunnable(Runnable):
                 model_name = usage_model_name or configurable.get("model_name", "unknown")
 
                 runs = []
+                assistant_msg_id = None
                 for msg in created_msgs:
-                    if getattr(msg, "role", "") != "assistant":
-                        continue
+                    if getattr(msg, "role", "") == "assistant":
+                        assistant_msg_id = msg.id
+                        run_data = {
+                            "message_id": msg.id,
+                            "model_name": model_name,
+                            "input_tokens": input_tokens,
+                            "output_tokens": output_tokens,
+                            "total_tokens": total_tokens,
+                            "cost_cents": 0,
 
-                    run_data = {
-                        "message_id": msg.id,
-                        "model_name": model_name,
-                        "input_tokens": input_tokens,
-                        "output_tokens": output_tokens,
-                        "total_tokens": total_tokens,
-                        "cost_cents": 0,
-
-                    }
-                    created_run = await create_run(db, run_data)
-                    runs.append(created_run)
+                        }
+                        created_run = await create_run(db, run_data)
+                        runs.append(created_run)
 
                     logger.info("runs.created", thread_id=thread_id, turn=turn, job_id=job_id,
                                 run_ids=[run.id for run in runs])
+
+                    if assistant_msg_id is not None:
+                        yield AIMessageChunk(
+                            content="",
+                            additional_kwargs={
+                                "event": "metadata",
+                                "thread_id": thread_id,
+                                "turn": turn,
+                                "message_id": assistant_msg_id,
+                            }
+                        )
+                        logger.info("thread_turn.completed", thread_id=thread_id, turn=turn,
+                                    assistant_message_id=assistant_msg_id)
 
             except Exception as e:
                 # Log error but don't fail the whole request if DB logging fails
@@ -154,6 +208,11 @@ class RedisQueueRunnable(Runnable):
                     await db_gen.aclose()
                 except StopAsyncIteration:
                     pass
+        finally:
+            try:
+                await db_gen.aclose()
+            except Exception:
+                pass
 
     async def ainvoke(self, input: str, config: Dict[str, Any] | None = None) -> AIMessage:
 

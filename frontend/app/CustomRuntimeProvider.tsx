@@ -6,7 +6,6 @@ import {
     useLocalRuntime,
     type ChatModelAdapter, ThreadUserMessagePart, ThreadMessage, ChatModelRunResult
 } from "@assistant-ui/react";
-import {resolveAssistantMessageId} from "@/lib/messages";
 
 type Mode = "stream" | "invoke";
 
@@ -77,15 +76,14 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
                 (conversationHistory ? conversationHistory + "\n" : "") +
                 `user: ${userMessageText}`
 
-            const turn = Math.floor(messages.length / 2);
-
-            const thread_id = 1;
 
             const BASE_API_URL: string =
                 process.env.NODE_ENV === "production"
                     ? "https://llm.testing.waldur.com"
                     : "http://127.0.0.1:8000";
 
+
+            const THREAD_ID = 1;
 
             // --------------- invoke (complete message) -------------------
             if (mode === "invoke") {
@@ -97,10 +95,7 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
                     body: JSON.stringify({
                         input: prompt,
                         config: {
-                            configurable: {
-                                thread_id: thread_id,
-                                turn: turn
-                            }
+                            configurable: {thread_id: THREAD_ID}
                         }
                     }),
                     signal: abortSignal,
@@ -112,7 +107,6 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
                 }
                 const json = (await response.json()) as {
                     output?: { content?: string };
-
                     content?: string;
                 };
                 const text =
@@ -120,16 +114,12 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
                     json?.content ??
                     ""; // tolerancy of shapes
 
-                const messageId = await resolveAssistantMessageId(thread_id, turn);
 
                 const result: ChatModelRunResult = {
                     content: [{type: "text", text}],
                     metadata: {
                         custom: {
-                            thread_id: thread_id,
-                            turn: turn,
-                            role: "assistant",
-                            message_id: messageId
+                            role: "assistant"
                         }
                     },
                 };
@@ -147,10 +137,7 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
                 body: JSON.stringify({
                     input: prompt,
                     config: {
-                        configurable: {
-                            thread_id: thread_id,
-                            turn: turn
-                        }
+                        configurable: {thread_id: THREAD_ID}
                     }
                 }),
                 signal: abortSignal,
@@ -188,8 +175,6 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
                                 content: [{type: "text", text: text}],
                                 metadata: {
                                     custom: {
-                                        thread_id: thread_id,
-                                        turn: turn,
                                         role: "assistant"
                                     }
                                 }
@@ -203,16 +188,12 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
             } finally {
                 reader.releaseLock();
             }
-            const messageId = await resolveAssistantMessageId(thread_id, turn, {signal: abortSignal});
 
 
             yield {
                 metadata: {
                     custom: {
-                        thread_id: thread_id,
-                        turn: turn,
                         role: "assistant",
-                        message_id: messageId
                     }
                 }
             } as ChatModelRunResult
