@@ -128,8 +128,9 @@ async def main():
                     if "eval_count" in ev:
                         usage["output_tokens"] = ev["eval_count"]
 
+                    model = OLLAMA_MODEL
                     resp_md = {
-                        "model": ev.get("model"),
+                        "model": model,
                         "created_at": ev.get("created_at"),
                         "done_reason": ev.get("done_reason"),
                     }

@@ -9,7 +9,7 @@ from .chains.chat import build_chat_chain
 from .config import settings
 from .db.deps import get_db
 from .redis.redis_conn import get_redis
-from .routers import messages, feedback
+from .routers import messages, feedback, runs
 from .services.logging import setup_logging
 from .services.request_context import RequestContextMiddleware
 from .routers.usage import router as usage_router
@@ -94,6 +94,8 @@ app.include_router(usage_router)
 app.include_router(messages.router)
 
 app.include_router(feedback.router)
+
+app.include_router(runs.router)
 
 # LangServe routers:
 chain = build_chat_chain()

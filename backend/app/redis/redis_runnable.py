@@ -7,6 +7,7 @@ from langchain_core.messages import AIMessageChunk, AIMessage
 from langchain_core.runnables import Runnable
 
 from ..config import settings
+from ..db.crud.runs import create_run
 from ..db.deps import get_db
 from ..redis.redis_conn import get_redis
 from ..routers.messages import create_conversation_turn, logger
@@ -45,7 +46,9 @@ class RedisQueueRunnable(Runnable):
                     yield AIMessageChunk(content=data.get("content", ""))
                 elif t == "metadata":
                     md = data.get("usage", {})
-                    yield AIMessageChunk(content="", additional_kwargs={"usage_metadata": md})
+                    yield AIMessageChunk(content="", additional_kwargs={"usage_metadata": md,
+                                                                        "model_name": data.get("response_metadata",
+                                                                                               {}).get("model")})
                 elif t == "error":
                     raise RuntimeError(data.get("message", "Worker error"))
                 elif t == "end":
@@ -77,9 +80,21 @@ class RedisQueueRunnable(Runnable):
 
         # 2) Stream results and collect response
         collected_response: list[str] = []
+        usage_meta: Dict[str, Any] = {}
+        usage_model_name: str | None = None
+
         async for chunk in self._stream_from_pubsub(job_id):
-            if isinstance(chunk, AIMessageChunk) and chunk.content:
-                collected_response.append(chunk.content)
+            if isinstance(chunk, AIMessageChunk):
+                if chunk.content:
+                    collected_response.append(chunk.content)
+
+                usage = (chunk.additional_kwargs or {}).get("usage_metadata")
+                if isinstance(usage, dict):
+                    usage_meta.update(usage)
+
+                model_from_chunk = (chunk.additional_kwargs or {}).get("model_name")
+                if model_from_chunk and not usage_model_name:
+                    usage_model_name = str(model_from_chunk)
             yield chunk
 
         # 3) Save to DB after streaming completes
@@ -94,17 +109,49 @@ class RedisQueueRunnable(Runnable):
                     assistant_response="".join(collected_response)
                 )
 
-                await create_conversation_turn(
+                created_msgs = await create_conversation_turn(
                     turn_data=turn_in,
                     db=db
                 )
 
+                input_tokens = int(
+                    usage_meta.get("input_tokens")
+                )
+                output_tokens = int(
+                    usage_meta.get("output_tokens")
+                )
+                total_tokens = int(
+                    input_tokens + output_tokens
+                )
+
+                model_name = usage_model_name or configurable.get("model_name", "unknown")
+
+                runs = []
+                for msg in created_msgs:
+                    if getattr(msg, "role", "") != "assistant":
+                        continue
+
+                    run_data = {
+                        "message_id": msg.id,
+                        "model_name": model_name,
+                        "input_tokens": input_tokens,
+                        "output_tokens": output_tokens,
+                        "total_tokens": total_tokens,
+                        "cost_cents": 0,
+
+                    }
+                    created_run = await create_run(db, run_data)
+                    runs.append(created_run)
+
+                    logger.info("runs.created", thread_id=thread_id, turn=turn, job_id=job_id,
+                                run_ids=[run.id for run in runs])
+
             except Exception as e:
                 # Log error but don't fail the whole request if DB logging fails
-                logger.warning("db.log_failed", error=str(e), thread_id=thread_id, turn=turn)
+                logger.warning("runs.creation_failed", error=str(e), thread_id=thread_id, turn=turn, job_id=job_id)
             finally:
                 try:
-                    await anext(db_gen)
+                    await db_gen.aclose()
                 except StopAsyncIteration:
                     pass
 
