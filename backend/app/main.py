@@ -32,7 +32,7 @@ if settings.env != "production":
 
 app.add_middleware(RequestContextMiddleware)
 app.add_middleware(
-    CORSMiddleware,
+    CORSMiddleware=["*"],
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],

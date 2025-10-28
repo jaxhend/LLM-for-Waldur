@@ -275,10 +275,10 @@ const AssistantActionBar: FC = () => {
                         <RefreshCwIcon />
                     </TooltipIconButton>
                 </ActionBarPrimitive.Reload>
-                <div className="flex justify-center items-center">
-                    <FeedbackButton />
-                    <FeedbackPanel threadMessages={threadMessages} user={"kasutaja"}/>
-                </div>
+                {/*<div className="flex justify-center items-center">*/}
+                {/*    <FeedbackButton />*/}
+                {/*    <FeedbackPanel threadMessages={threadMessages} user={"kasutaja"}/>*/}
+                {/*</div>*/}
             </ActionBarPrimitive.Root>
         </FeedbackProvider>
     );
