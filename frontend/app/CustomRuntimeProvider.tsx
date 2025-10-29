@@ -77,13 +77,13 @@ async function* streamChat(input: string, userId: string): AsyncGenerator<{
 }
 
 async function saveAssistantStream({
-                                       input,
+                                       contextInput,
                                        userId,
                                        assistantId,
                                        setMessages,
                                        setIsRunning,
                                    }: {
-    input: string;
+    contextInput: string;
     userId: string;
     assistantId: string;
     setMessages: React.Dispatch<React.SetStateAction<readonly ThreadMessageLike[]>>;
@@ -91,7 +91,7 @@ async function saveAssistantStream({
 }) {
     setIsRunning(true);
     try {
-        for await (const part of streamChat(input, userId)) {
+        for await (const part of streamChat(contextInput, userId)) {
             setMessages((prev) =>
                 prev.map((m) => {
                     if (m.id !== assistantId) return m;
@@ -150,6 +150,26 @@ const addPreviousText = (
     };
 };
 
+const addContext = (userInput: string, pastMessages: readonly ThreadMessageLike[]): string => {
+    if (!pastMessages || pastMessages.length === 0) {
+        return userInput;
+    }
+
+    const contextMessages = pastMessages.slice(-50); // Limit to last 50 messages for context
+    let context = "This is the system prompt: You are a highly knowledgeable and helpful support assistant for " +
+        "Waldur. Your primary goal is to provide clear, accurate, and friendly assistance to users. " +
+        "Always respond in a professional and polite tone, breaking down complex instructions into simple, " +
+        "easy-to-follow steps.\n";
+    context += "This is the conversation history:\n";
+    for (const message of contextMessages) {
+        const contentText = (message.content[0] as any)?.text ?? "";
+        context += `${message.role}: ${contentText}\n`;
+    }
+
+    context += `\nThis is the user prompt: ${userInput}\n`;
+    return context;
+}
+
 const convertMessage = (message: ThreadMessageLike) => {
     return message;
 };
@@ -192,8 +212,10 @@ export function CustomRuntimeProvider({children, userId}: Readonly<{ children: R
         const assistantPlaceholder = createAssistantPlaceholder();
         setMessages((prev) => [...prev, assistantPlaceholder]);
 
+        const contextInput: string = addContext(input, messages.slice(0, -1));
+
         await saveAssistantStream({
-            input,
+            contextInput,
             userId,
             assistantId: assistantPlaceholder.id!,
             setMessages,
@@ -245,9 +267,11 @@ export function CustomRuntimeProvider({children, userId}: Readonly<{ children: R
             return updated;
         });
 
+        const contextInput: string = addContext(input, messages.slice(0, userIndex));
+
         // Start streaming the new assistant response
         await saveAssistantStream({
-            input,
+            contextInput,
             userId,
             assistantId: assistantIdToStream,
             setMessages,
@@ -287,8 +311,10 @@ export function CustomRuntimeProvider({children, userId}: Readonly<{ children: R
             return updated;
         });
 
+        const contextInput: string = addContext(input, messages.slice(0, userIndex));
+
         await saveAssistantStream({
-            input,
+            contextInput,
             userId,
             assistantId: sourceId, // Stream into the existing assistant message
             setMessages,
