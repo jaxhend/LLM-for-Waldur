@@ -51,9 +51,21 @@ def _coerce_option_value(key: str, value):
 
 def _extract_messages_and_options(job: dict) -> tuple[list[dict], dict]:
     """
-    Keep it simple for now: always wrap LangServe's input string into a single-user message.
+    Build the chat message list for Ollama.
+    Include previous conversation context if provided.
     """
-    messages = [{"role": "user", "content": job.get("input", "")}]
+    context = job.get("context") or []
+    if not isinstance(context, list):
+        context = []
+
+    valid_context = [
+        {"role": m.get("role"), "content": m.get("content")}
+        for m in context
+        if isinstance(m, dict) and "content" in m
+    ]
+    user_msg = {"role": "user", "content": job.get("input", "")}
+    messages = valid_context + [user_msg]
+
     cfg = (job.get("config") or {})
     options = {}
     for k in _OPTION_TYPES.keys():
@@ -99,6 +111,8 @@ async def stream_ollama_chat(messages: list[dict], options: dict | None = None):
 
 async def main():
     r = Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, decode_responses=True)
+    logger.info("worker.startup", model=OLLAMA_MODEL, redis_queue=REDIS_QUEUE)
+
     while True:
         _, job_json = await r.blpop(REDIS_QUEUE, timeout=0)
         job = json.loads(job_json)

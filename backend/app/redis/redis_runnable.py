@@ -15,6 +15,9 @@ from ..redis.redis_conn import get_redis
 from ..routers.messages import create_conversation_turn, logger
 from ..schemas.messages import ConversationTurnCreate
 
+CTX_TTL_SECONDS = 300  # 5 minutes
+MAX_CTX_MESSAGES = 10
+
 
 class RedisQueueRunnable(Runnable):
     """
@@ -82,7 +85,7 @@ class RedisQueueRunnable(Runnable):
                 thread_id = None
 
         if thread_id is None:
-            t = Threads(user_id)
+            t = Threads(user_id=user_id)
             db.add(t)
             await db.commit()
             await db.refresh(t)
@@ -106,14 +109,36 @@ class RedisQueueRunnable(Runnable):
         try:
             thread_id, turn = await self.ensure_thread_and_turn(db, configurable)
 
+            redis = get_redis()
+            ctx_key = f"chat:ctx:{thread_id}"
+
+            context_messages: list[dict] = []
+            cached = await redis.get(ctx_key)
+            if cached:
+                try:
+                    context_messages = json.loads(cached)
+                except Exception:
+                    context_messages = []
+
+            if not context_messages:
+                res = await db.execute(
+                    select(Messages)
+                    .where(Messages.thread_id == thread_id)
+                    .order_by(Messages.id.desc())
+                    .limit(MAX_CTX_MESSAGES)
+                )
+                rows = list(reversed(res.scalars().all()))
+                context_messages = [{"role": msg.role, "content": msg.content} for msg in rows]
+
             # 1) Enqueue
             job_id = str(uuid.uuid4())
             payload = {
                 "id": job_id,
                 "input": input,
+                "context": context_messages,
                 "config": configurable
             }
-            redis = get_redis()
+
             await redis.rpush(settings.redis_queue, json.dumps(payload))
 
             # 2) Stream results and collect response
@@ -179,30 +204,47 @@ class RedisQueueRunnable(Runnable):
                         created_run = await create_run(db, run_data)
                         runs.append(created_run)
 
-                    logger.info("runs.created", thread_id=thread_id, turn=turn, job_id=job_id,
-                                run_ids=[run.id for run in runs])
+                logger.info("runs.created", thread_id=thread_id, turn=turn, job_id=job_id,
+                            run_ids=[run.id for run in runs])
 
-                    if assistant_msg_id is not None:
-                        yield AIMessageChunk(
-                            content="",
-                            additional_kwargs={
-                                "event": "metadata",
-                                "thread_id": thread_id,
-                                "turn": turn,
-                                "message_id": assistant_msg_id,
-                            }
-                        )
-                        logger.info("thread_turn.completed", thread_id=thread_id, turn=turn,
-                                    assistant_message_id=assistant_msg_id)
+                # Update short-term context once in Redis
+                assistant_text = "".join(collected_response)
+                if input:
+                    context_messages.append({"role": "user", "content": input})
+                if assistant_text:
+                    context_messages.append({"role": "assistant", "content": assistant_text})
+                # Trim to max messages
+                if len(context_messages) > MAX_CTX_MESSAGES:
+                    context_messages = context_messages[-MAX_CTX_MESSAGES:]
+
+                await redis.setex(ctx_key, CTX_TTL_SECONDS, json.dumps(context_messages))
+
+                ctx_source = "redis" if cached else "db"
+                logger.debug(
+                    "ctx.loaded",
+                    source=ctx_source,
+                    thread_id=thread_id,
+                    msgs=len(context_messages),
+                    preview_first=(context_messages[0]["content"][:80] if context_messages else None),
+                    preview_last=(context_messages[-1]["content"][:80] if context_messages else None)
+                )
+
+                if assistant_msg_id is not None:
+                    yield AIMessageChunk(
+                        content="",
+                        additional_kwargs={
+                            "event": "metadata",
+                            "thread_id": thread_id,
+                            "turn": turn,
+                            "message_id": assistant_msg_id,
+                        }
+                    )
+                    logger.info("thread_turn.completed", thread_id=thread_id, turn=turn,
+                                assistant_message_id=assistant_msg_id)
 
             except Exception as e:
                 # Log error but don't fail the whole request if DB logging fails
                 logger.warning("runs.creation_failed", error=str(e), thread_id=thread_id, turn=turn, job_id=job_id)
-            finally:
-                try:
-                    await db_gen.aclose()
-                except StopAsyncIteration:
-                    pass
         finally:
             try:
                 await db_gen.aclose()
