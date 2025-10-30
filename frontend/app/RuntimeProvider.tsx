@@ -193,7 +193,7 @@ const createAssistantPlaceholder = (): ThreadMessageLike => ({
 });
 
 
-export function CustomRuntimeProvider({children, userId}: Readonly<{ children: ReactNode; userId: string }>) {
+export function RuntimeProvider({children, userId}: Readonly<{ children: ReactNode; userId: string }>) {
     const [isRunning, setIsRunning] = useState(false);
     const [messages, setMessages] = useState<readonly ThreadMessageLike[]>([]);
 
