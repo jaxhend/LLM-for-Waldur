@@ -2,7 +2,8 @@ import "./globals.css";
 import type {Metadata} from "next";
 import type {ReactNode} from "react";
 import {Geist, Geist_Mono} from "next/font/google";
-import {RuntimeProvider} from "./RuntimeProvider";
+import {ThreadProvider} from "@/app/ThreadProvider";
+import {ThreadRuntimeProvider} from "@/app/ThreadRuntimeProvider";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -29,9 +30,11 @@ export default function RootLayout({
     return (
         <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
         <body>
-        <RuntimeProvider userId={userId}>
-            {children}
-        </RuntimeProvider>
+        <ThreadProvider>
+            <ThreadRuntimeProvider userId={userId}>
+                {children}
+            </ThreadRuntimeProvider>
+        </ThreadProvider>
         </body>
         </html>
     );
