@@ -1,94 +1,75 @@
-"use client"
+"use client";
+
+import {debugAllThreads, debugCurrentThread} from "@/lib/debug";
+
+{/*
+    Continue: https://www.assistant-ui.com/docs/runtimes/custom/external-store#2-advanced-conversion-with-useexternalmessageconverter
+    Live LLM responses: http://localhost:3000/
+    Features to be added:
+
+    TODO: thread management - renaming, infinite new thread (should be scrollable)
+    TODO: onCancel, onFeedback adapter
+    TODO: view history button, view token usage button
+
+    TODO: autoscroll to bottom (like ChatGPT)
+    TODO: userID to identify different users (kasutaja1, kasutaja2)
+    TODO: mock DB integration with threading, messages and user management
+
+    Changes to revert:
+    - backend\app\main.py CORS settings
+*/
+}
+
 
 import {useThreadContext} from "@/app/ThreadProvider";
-import {ReactNode, useState} from "react";
+import {ReactNode, useEffect, useState} from "react";
 import {
-    AppendMessage,
     AssistantRuntimeProvider,
     ExternalStoreThreadData,
-    ExternalStoreThreadListAdapter, ThreadMessageLike,
-    useExternalStoreRuntime
+    ThreadMessageLike,
+    useExternalStoreRuntime,
 } from "@assistant-ui/react";
-import {
-    saveAssistantStream,
-    convertMessage,
-    addContext,
-    createUserMessage,
-    createAssistantPlaceholder,
-    addPreviousText,
-} from "@/lib/helper";
-import type {StartRunConfig} from "@/lib/types";
+import {convertMessage} from "@/lib/messages/messageUtils";
+import {useThreadRunningState, useAbortControllers} from "@/lib/thread/threadStateHooks";
+import {createThreadListAdapter} from "@/lib/thread/threadListAdapter";
+import {createOnNew, createOnEdit, createOnReload} from "@/lib/messages/messageHandlers";
 
+export function ThreadRuntimeProvider({
+                                          children,
+                                          userId,
+                                      }: Readonly<{ children: ReactNode; userId: string }>) {
+    const {currentThreadId, setCurrentThreadId, threads, setThreads} = useThreadContext();
 
-export function ThreadRuntimeProvider({children, userId}: Readonly<{ children: ReactNode; userId: string }>) {
-    const {currentThreadId, setCurrentThreadId, threads, setThreads} =
-        useThreadContext();
-    const [threadList, setThreadList] = useState<ExternalStoreThreadData<"regular" | "archived">[]>([
-        {id: "default", status: "regular", title: "New Chat"},
-    ]);
+    const [threadList, setThreadList] = useState<
+        ExternalStoreThreadData<"regular" | "archived">[]
+    >([{id: currentThreadId, status: "regular", title: "New Chat"}]);
 
-    const threadListAdapter: ExternalStoreThreadListAdapter = {
-        threadId: currentThreadId,
-        threads: threadList.filter((t): t is ExternalStoreThreadData<"regular"> => t.status === "regular"),
-        archivedThreads: threadList.filter((t): t is ExternalStoreThreadData<"archived"> => t.status === "archived"),
+    // Thread state management hooks
+    const {getIsRunning, setIsRunning} = useThreadRunningState();
+    const {createController, abortThread, cleanupController} = useAbortControllers();
 
-        onSwitchToNewThread: () => {
-            const newId = `thread-${Date.now()}`;
-            setThreadList((prev) => [
-                ...prev,
-                {
-                    id: newId,
-                    status: "regular",
-                    title: "New Chat",
-                },
-            ]);
-            setThreads((prev) => new Map(prev).set(newId, []));
-            setCurrentThreadId(newId);
-        },
-
-        onSwitchToThread: (threadId) => {
-            setCurrentThreadId(threadId);
-        },
-
-        onRename: (threadId, newTitle) => {
-            setThreadList((prev) =>
-                prev.map((t) =>
-                    t.id === threadId ? {...t, title: newTitle} : t,
-                ),
-            );
-        },
-
-        onArchive: (threadId) => {
-            setThreadList((prev) =>
-                prev.map((t) =>
-                    t.id === threadId ? {...t, status: "archived"} : t,
-                ),
-            );
-        },
-
-        onDelete: (threadId) => {
-            setThreadList((prev) => prev.filter((t) => t.id !== threadId));
-            setThreads((prev) => {
-                const next = new Map(prev);
-                next.delete(threadId);
-                return next;
-            });
-            if (currentThreadId === threadId) {
-                setCurrentThreadId("default");
-            }
-        },
-    };
-
-    const [isRunning, setIsRunning] = useState(false);
-
+    // Get current thread state
+    const isRunning = getIsRunning(currentThreadId);
     const messages = threads.get(currentThreadId) ?? [];
+
+    if (process.env.NODE_ENV !== "production") {
+        useEffect(() => {
+            debugCurrentThread(currentThreadId, messages);
+        }, [currentThreadId, messages.length]);
+
+        useEffect(() => {
+            debugAllThreads(threads, currentThreadId);
+        }, [threads.size, currentThreadId]);
+    }
+
+    // Messages setter for current thread
     const setMessages: React.Dispatch<React.SetStateAction<readonly ThreadMessageLike[]>> = (
-        valueOrUpdater,
+        valueOrUpdater
     ) => {
-        setThreads(prev => {
+        setThreads((prev) => {
             const currentMessages = prev.get(currentThreadId) ?? [];
             const newMessages =
-                typeof valueOrUpdater === 'function'
+                typeof valueOrUpdater === "function"
                     ? (valueOrUpdater as (prev: readonly ThreadMessageLike[]) => readonly ThreadMessageLike[])(currentMessages)
                     : valueOrUpdater;
 
@@ -96,136 +77,44 @@ export function ThreadRuntimeProvider({children, userId}: Readonly<{ children: R
 
             const newThreads = new Map(prev);
             newThreads.set(currentThreadId, newMessages as ThreadMessageLike[]);
+
             return newThreads;
         });
     };
 
-    const onNew = async (message: AppendMessage) => {
-        const firstContent = message.content[0];
-        // Check if the content is a valid text object
-        if (typeof firstContent !== "object" || !firstContent || firstContent.type !== "text") {
-            throw new Error("Only text messages are supported");
-        }
-        const input = firstContent.text;
-
-        const userMessage = createUserMessage(input);
-        setMessages((prev) => [...prev, userMessage]);
-
-        setIsRunning(true);
-        const assistantPlaceholder = createAssistantPlaceholder();
-        setMessages((prev) => [...prev, assistantPlaceholder]);
-
-        const contextInput: string = addContext(input, messages.slice(0, -1));
-
-        await saveAssistantStream({
-            contextInput,
-            userId,
-            assistantId: assistantPlaceholder.id!,
-            setMessages,
-            setIsRunning,
-        });
+    // Abort stream helper
+    const abortThreadStream = (threadId: string) => {
+        abortThread(threadId);
+        setIsRunning(threadId, false);
     };
 
+    // Thread list adapter
+    const threadListAdapter = createThreadListAdapter({
+        currentThreadId,
+        threadList,
+        setThreadList,
+        setCurrentThreadId,
+        setThreads,
+        abortThreadStream,
+    });
 
-    const onEdit = async (message: AppendMessage) => {
-        const firstContent = message.content[0];
-
-        if (typeof firstContent !== "object" || !firstContent || firstContent.type !== "text") {
-            throw new Error("Only text messages are supported");
-        }
-        const input = firstContent.text;
-        const sourceId = message.sourceId;
-
-        // Find the user message and its following assistant message
-        const userIndex = messages.findIndex((m) => m.id === sourceId);
-        if (userIndex === -1) return;
-
-        const oldUser = messages[userIndex];
-        const oldText = (oldUser.content[0] as any)?.text ?? "";
-
-        const oldAssistant = messages[userIndex + 1];
-        const oldAssistantText = oldAssistant?.role === "assistant"
-            ? (oldAssistant.content[0] as any)?.text ?? ""
-            : "";
-
-        const assistantIdToStream: string = oldAssistant?.id ?? "";
-        if (!assistantIdToStream) return;
-
-
-        // Update user message and reset assistant message content, preserving edit history
-        setMessages((prev) => {
-            const updated = [...prev];
-
-            updated[userIndex] = {
-                ...oldUser,
-                content: [{type: "text", text: input}],
-                metadata: addPreviousText(oldUser.metadata, oldText)
-            };
-
-            updated[userIndex + 1] = {
-                ...oldAssistant,
-                content: [{type: "text", text: ""}],
-                metadata: addPreviousText(oldAssistant.metadata, oldAssistantText)
-            };
-            return updated;
-        });
-
-        const contextInput: string = addContext(input, messages.slice(0, userIndex));
-
-        // Start streaming the new assistant response
-        await saveAssistantStream({
-            contextInput,
-            userId,
-            assistantId: assistantIdToStream,
-            setMessages,
-            setIsRunning,
-        });
+    // Message handler dependencies
+    const handlerDeps = {
+        userId,
+        messages,
+        setMessages,
+        currentThreadId,
+        setIsRunning,
+        createController,
+        cleanupController,
     };
 
+    // Message handlers
+    const onNew = createOnNew(handlerDeps);
+    const onEdit = createOnEdit(handlerDeps);
+    const onReload = createOnReload(handlerDeps);
 
-    const onReload = async (parentId: string | null, config: StartRunConfig) => {
-        const sourceId = config.sourceId; // assistant message ID to reload
-        if (!sourceId) return;
-
-        const assistantIndex = messages.findIndex((m) => m.id === sourceId);
-        if (assistantIndex === -1) return
-
-        const oldAssistant = messages[assistantIndex];
-        const oldAssistantText = (oldAssistant.content[0] as any)?.text ?? "";
-
-        const userIndex = assistantIndex - 1;
-        if (userIndex < 0) return; // No preceding user message
-        const oldUser = messages[userIndex];
-        const input = (oldUser.content[0] as any)?.text ?? "";
-
-        if (oldAssistant.role !== 'assistant' || oldUser.role !== 'user') {
-            return; // Safety check
-        }
-
-        // Reset assistant message content and preserve edit history
-        setMessages((prev) => {
-            const updated = [...prev];
-
-            updated[userIndex + 1] = {
-                ...oldAssistant,
-                content: [{type: "text", text: ""}],
-                metadata: addPreviousText(oldAssistant.metadata, oldAssistantText)
-            };
-            return updated;
-        });
-
-        const contextInput: string = addContext(input, messages.slice(0, userIndex));
-
-        await saveAssistantStream({
-            contextInput,
-            userId,
-            assistantId: sourceId, // Stream into the existing assistant message
-            setMessages,
-            setIsRunning,
-        });
-    };
-
-
+    // Runtime
     const runtime = useExternalStoreRuntime({
         isRunning,
         messages,
@@ -234,13 +123,11 @@ export function ThreadRuntimeProvider({children, userId}: Readonly<{ children: R
         onEdit,
         onReload,
         adapters: {
-            threadList: threadListAdapter
+            threadList: threadListAdapter,
         },
     });
 
-    return (
-        <AssistantRuntimeProvider runtime={runtime}>
-            {children}
-        </AssistantRuntimeProvider>
-    );
+    return <AssistantRuntimeProvider runtime={runtime}>
+        {children}
+    </AssistantRuntimeProvider>;
 }
