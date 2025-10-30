@@ -1,23 +1,5 @@
 "use client";
 
-{/*
-    Continue: https://www.assistant-ui.com/docs/runtimes/custom/external-store#2-advanced-conversion-with-useexternalmessageconverter
-    Live LLM responses: http://localhost:3000/
-    Features to be added:
-    TODO: thread management (delete, rename, create new, navigate between, naming, message ID)
-
-    TODO: onCancel, OnReload, feedback adapters
-    TODO: add history button to messages to show previous versions
-    TODO: autoscroll to bottom (like ChatGPT)
-    TODO: userID to identify different users
-    TODO: mock DB integration with threading, messages and user management
-    TODO: token button
-
-    Changes to revert:
-    - backend\app\main.py CORS settings
-*/}
-
-
 import {createContext, ReactNode, useContext, useState} from "react";
 import {ThreadMessageLike} from "@assistant-ui/react";
 
@@ -30,21 +12,28 @@ const ThreadContext = createContext<{
     >;
 }>({
     currentThreadId: "default",
-    setCurrentThreadId: () => {},
+    setCurrentThreadId: () => {
+    },
     threads: new Map(),
-    setThreads: () => {},
+    setThreads: () => {
+    },
 });
 
 // Thread provider component
-export function ThreadProvider({ children }: { children: ReactNode }) {
+export function ThreadProvider({children}: { children: ReactNode }) {
+    // Create initial thread with unique ID
+    const [threadID] = useState(() => crypto.randomUUID());
+    // Store ALL threads in a Map: threadId -> messages[]
     const [threads, setThreads] = useState<Map<string, ThreadMessageLike[]>>(
-        new Map([["default", []]]),
+        () => new Map([[threadID, []]])
     );
-    const [currentThreadId, setCurrentThreadId] = useState("default");
+    // Track which thread is currently active
+    const [currentThreadId, setCurrentThreadId] = useState(threadID);
 
+    // Provide this state to all child components
     return (
         <ThreadContext.Provider
-            value={{ currentThreadId, setCurrentThreadId, threads, setThreads }}
+            value={{currentThreadId, setCurrentThreadId, threads, setThreads}}
         >
             {children}
         </ThreadContext.Provider>
