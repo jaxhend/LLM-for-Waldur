@@ -6,13 +6,15 @@ import {debugAllThreads, debugCurrentThread} from "@/lib/debug";
     Continue: https://www.assistant-ui.com/docs/runtimes/custom/external-store#2-advanced-conversion-with-useexternalmessageconverter
     Live LLM responses: http://localhost:3000/
     Features to be added:
+    TODO: Read the newly refactored code
 
     TODO: thread management - renaming, infinite new thread (should be scrollable)
-    TODO: onCancel, onFeedback adapter
+    TODO: onCancel, onFeedback adapter (vt docs)
     TODO: view history button, view token usage button
 
     TODO: autoscroll to bottom (like ChatGPT)
     TODO: userID to identify different users (kasutaja1, kasutaja2)
+    TODO: localstrorage persistence for threads and messages
     TODO: mock DB integration with threading, messages and user management
 
     Changes to revert:
