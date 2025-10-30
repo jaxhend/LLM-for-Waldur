@@ -8,7 +8,7 @@ class MessageResponse(BaseModel):
     thread_id: int
     role: str
     content: str
-    turn: int
+    dialogue_turn: int
     created_at: datetime
 
     class Config:
@@ -18,7 +18,7 @@ class MessageResponse(BaseModel):
 class ConversationTurnCreate(BaseModel):
     """Schema for creating a complete turn (user + assistant messages)."""
     thread_id: int
-    turn: int
+    conversation_turn: int
     user_message: str
     assistant_response: str
 

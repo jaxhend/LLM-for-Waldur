@@ -13,10 +13,13 @@ class Messages(Base):
     thread_id: Mapped[int] = mapped_column(Integer, ForeignKey("threads.id", ondelete="CASCADE"), nullable=False)
     role: Mapped[str] = mapped_column(String(50), nullable=False)
     content: Mapped[str] = mapped_column(String, nullable=False)
-    turn: Mapped[int] = mapped_column(Integer, nullable=False)
+    conversation_turn: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
+    modified_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now()
+    )
 
     threads = relationship("Threads", back_populates="messages")
-    runs = relationship("Runs", back_populates="messages")
     feedback = relationship("Feedback", back_populates="messages")
-

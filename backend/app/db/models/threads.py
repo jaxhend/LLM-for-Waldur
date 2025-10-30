@@ -18,4 +18,4 @@ class Threads(Base):
 
     users = relationship("Users", back_populates="threads")
     messages = relationship("Messages", back_populates="threads", cascade="all, delete-orphan")
-
+    runs = relationship("Runs", back_populates="threads", cascade="all, delete-orphan")

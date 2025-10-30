@@ -55,17 +55,6 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
             };
 
 
-            // For LLM context, use all but the last message
-            const conversationHistory: string = messages
-                .slice(0, -1)
-                .map(msg => {
-                    const text = extractUserText(msg.content as unknown as ThreadUserMessagePart);
-                    return text ? `${msg.role}: ${text}` : "";
-                })
-                .filter(Boolean)
-                .join("\n");
-
-
             const lastMessage: ThreadMessage = messages[messages.length - 1];
             const userMessageText: string = extractUserText(lastMessage.content as unknown as ThreadUserMessagePart);
 
@@ -73,7 +62,6 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
             // Single string input for LangServe
             const prompt =
                 `System: Be concise.\n` +
-                (conversationHistory ? conversationHistory + "\n" : "") +
                 `user: ${userMessageText}`
 
 

@@ -16,7 +16,31 @@ from ..routers.messages import create_conversation_turn, logger
 from ..schemas.messages import ConversationTurnCreate
 
 CTX_TTL_SECONDS = 300  # 5 minutes
-MAX_CTX_MESSAGES = 10
+MAX_CTX_MESSAGES = 20
+
+
+def clean_ctx(messages: list[dict]) -> list[dict]:
+    """
+    Cleans the context messages by removing any unnecessary fields.
+    """
+    out: list[dict] = []
+    for msg in messages:
+        if not isinstance(msg, dict):
+            continue
+        role = msg.get("role")
+        if role not in ("user", "assistant"):
+            continue
+        content = msg.get("content")
+        if not isinstance(content, str):
+            content = "" if content is None else str(content)
+        content = content.strip()
+        if not content:
+            continue
+        out.append({"role": role, "content": content})
+
+        if len(out) > MAX_CTX_MESSAGES:
+            out = out[-MAX_CTX_MESSAGES:]
+    return out
 
 
 class RedisQueueRunnable(Runnable):
@@ -94,12 +118,14 @@ class RedisQueueRunnable(Runnable):
         q = await db.execute(
             select(func.max(Messages.turn)).where(Messages.thread_id == thread_id)
         )
-        max_turn = q.scalar() or 0
-        next_turn = max_turn + 1
-        return thread_id, next_turn
+        max_dialogue_turn = q.scalar() or 0
+        next_dialogue_turn = max_dialogue_turn + 1
+        return thread_id, next_dialogue_turn
 
     # ------------------- Async interfaces LangServe uses -------------------
     async def astream(self, input: str, config: Dict[str, Any] | None = None):
+        if not isinstance(input, str):
+            raise TypeError("input must be a string")
 
         # Extract DB logging config
         configurable = (config or {}).get("configurable", {})
@@ -107,7 +133,7 @@ class RedisQueueRunnable(Runnable):
         db_gen = get_db()
         db = await anext(db_gen)
         try:
-            thread_id, turn = await self.ensure_thread_and_turn(db, configurable)
+            thread_id, dialogue_turn = await self.ensure_thread_and_turn(db, configurable)
 
             redis = get_redis()
             ctx_key = f"chat:ctx:{thread_id}"
@@ -128,13 +154,16 @@ class RedisQueueRunnable(Runnable):
                     .limit(MAX_CTX_MESSAGES)
                 )
                 rows = list(reversed(res.scalars().all()))
-                context_messages = [{"role": msg.role, "content": msg.content} for msg in rows]
+                context_messages = [{"role": m.role, "content": m.content} for m in rows]
+
+            context_messages = clean_ctx(context_messages)
 
             # 1) Enqueue
+            user_text = input
             job_id = str(uuid.uuid4())
             payload = {
                 "id": job_id,
-                "input": input,
+                "input": user_text,
                 "context": context_messages,
                 "config": configurable
             }
@@ -163,15 +192,15 @@ class RedisQueueRunnable(Runnable):
             # 3) Save to DB after streaming completes
 
             try:
-                turn_in = ConversationTurnCreate(
+                dialogue_turn_in = ConversationTurnCreate(
                     thread_id=thread_id,
-                    turn=turn,
+                    dialogu_turn=dialogue_turn,
                     user_message=input,
                     assistant_response="".join(collected_response)
                 )
 
                 created_msgs = await create_conversation_turn(
-                    turn_data=turn_in,
+                    turn_data=dialogue_turn_in,
                     db=db
                 )
 
@@ -180,9 +209,6 @@ class RedisQueueRunnable(Runnable):
                 )
                 output_tokens = int(
                     usage_meta.get("output_tokens")
-                )
-                total_tokens = int(
-                    input_tokens + output_tokens
                 )
 
                 model_name = usage_model_name or configurable.get("model_name", "unknown")
@@ -193,41 +219,27 @@ class RedisQueueRunnable(Runnable):
                     if getattr(msg, "role", "") == "assistant":
                         assistant_msg_id = msg.id
                         run_data = {
-                            "message_id": msg.id,
+                            "thread_id": thread_id,
+                            "dialogue_turn": dialogue_turn,
                             "model_name": model_name,
                             "input_tokens": input_tokens,
-                            "output_tokens": output_tokens,
-                            "total_tokens": total_tokens,
-                            "cost_cents": 0,
-
+                            "output_tokens": output_tokens
                         }
                         created_run = await create_run(db, run_data)
                         runs.append(created_run)
+                        break
 
-                logger.info("runs.created", thread_id=thread_id, turn=turn, job_id=job_id,
-                            run_ids=[run.id for run in runs])
+                logger.info("runs.created", thread_id=thread_id, dialogue_turn=dialogue_turn, job_id=job_id,
+                            run_ids=[run.id for run in runs]
+                            )
 
-                # Update short-term context once in Redis
                 assistant_text = "".join(collected_response)
-                if input:
-                    context_messages.append({"role": "user", "content": input})
+                if user_text:
+                    context_messages.append({"role": "user", "content": user_text})
                 if assistant_text:
                     context_messages.append({"role": "assistant", "content": assistant_text})
-                # Trim to max messages
-                if len(context_messages) > MAX_CTX_MESSAGES:
-                    context_messages = context_messages[-MAX_CTX_MESSAGES:]
-
+                context_messages = clean_ctx(context_messages)
                 await redis.setex(ctx_key, CTX_TTL_SECONDS, json.dumps(context_messages))
-
-                ctx_source = "redis" if cached else "db"
-                logger.debug(
-                    "ctx.loaded",
-                    source=ctx_source,
-                    thread_id=thread_id,
-                    msgs=len(context_messages),
-                    preview_first=(context_messages[0]["content"][:80] if context_messages else None),
-                    preview_last=(context_messages[-1]["content"][:80] if context_messages else None)
-                )
 
                 if assistant_msg_id is not None:
                     yield AIMessageChunk(
@@ -235,16 +247,17 @@ class RedisQueueRunnable(Runnable):
                         additional_kwargs={
                             "event": "metadata",
                             "thread_id": thread_id,
-                            "turn": turn,
+                            "dialogue_turn": dialogue_turn,
                             "message_id": assistant_msg_id,
                         }
                     )
-                    logger.info("thread_turn.completed", thread_id=thread_id, turn=turn,
+                    logger.info("thread_turn.completed", thread_id=thread_id, dialogue_turn=dialogue_turn,
                                 assistant_message_id=assistant_msg_id)
 
             except Exception as e:
                 # Log error but don't fail the whole request if DB logging fails
-                logger.warning("runs.creation_failed", error=str(e), thread_id=thread_id, turn=turn, job_id=job_id)
+                logger.warning("runs.creation_failed", error=str(e), thread_id=thread_id, dialogue_turn=dialogue_turn,
+                               job_id=job_id)
         finally:
             try:
                 await db_gen.aclose()

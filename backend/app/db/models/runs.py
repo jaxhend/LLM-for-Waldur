@@ -1,5 +1,4 @@
 from datetime import datetime
-
 from sqlalchemy import Integer, ForeignKey, String, TIMESTAMP, func
 from sqlalchemy.dialects.mysql import VARCHAR
 from sqlalchemy.orm import mapped_column, relationship, Mapped
@@ -11,13 +10,11 @@ class Runs(Base):
     __tablename__ = "runs"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    message_id: Mapped[int] = mapped_column(Integer, ForeignKey("messages.id"), nullable=False)
+    thread_id: Mapped[int] = mapped_column(Integer, ForeignKey("threads.id", ondelete="CASCADE"), nullable=False)
+    conversation_turn: Mapped[int] = mapped_column(Integer, nullable=False)
     model_name: Mapped[str] = mapped_column(VARCHAR, nullable=False)
     input_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
     output_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
-    total_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
-    cost_cents: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=func.now())
 
-
-    messages = relationship("Messages", back_populates="runs")
+    threads = relationship("Threads", back_populates="runs")
