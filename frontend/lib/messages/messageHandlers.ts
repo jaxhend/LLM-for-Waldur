@@ -4,7 +4,7 @@ import {createUserMessage, createAssistantPlaceholder} from "./messageFactories"
 import {addContext, addPreviousText} from "./messageUtils";
 import {parseAssistantStream} from "@/lib/streaming/parseAssistantStream";
 import {addThreadToListIfNotExists} from "@/lib/thread/threadListAdapter";
-import {generateAndSetThreadTitle} from "@/lib/streaming/generateTitle";
+import {generateAndSetThreadTitle} from "@/lib/streaming/generateAndSetThreadTitle";
 
 export interface MessageHandlerDependencies {
     userId: string;
