@@ -11,7 +11,7 @@ interface FeedbackPanelProps {
     messageId?: number;
 }
 
-export const FeedbackPanel: FC<FeedbackPanelProps> = ({user, messageId}) => {
+export const FeedbackPanel: FC<FeedbackPanelProps> = ({messageId}) => {
     const {isOpen, closePanel, sendFeedback, isSending, activeMessageId} = useFeedback();
     const [comment, setComment] = useState("");
     const [rating, setRating] = useState<number | null>(null);
