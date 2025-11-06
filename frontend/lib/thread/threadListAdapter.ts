@@ -26,6 +26,26 @@ const deleteEmptyThread = (
     })
 };
 
+export const addThreadToListIfNotExists = (
+    setThreadList: React.Dispatch<React.SetStateAction<ExternalStoreThreadData<"regular" | "archived">[]>>,
+    currentThreadId: string
+) => {
+    setThreadList((prev) => {
+        const exists = prev.some((t) => t.id === currentThreadId);
+        if (exists) return prev;
+
+        return [
+            ...prev,
+            {
+                id: currentThreadId,
+                status: "regular" as const,
+                title: "New Chat",
+            },
+        ];
+    });
+}
+
+
 
 export const createThreadListAdapter = ({
                                             currentThreadId,

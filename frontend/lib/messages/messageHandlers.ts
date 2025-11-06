@@ -3,8 +3,10 @@ import {StartRunConfig} from "@/lib/types";
 import {createUserMessage, createAssistantPlaceholder} from "./messageFactories";
 import {addContext, addPreviousText} from "./messageUtils";
 import {parseAssistantStream} from "@/lib/streaming/parseAssistantStream";
+import {addThreadToListIfNotExists} from "@/lib/thread/threadListAdapter";
+import {generateAndSetThreadTitle} from "@/lib/streaming/generateTitle";
 
-interface MessageHandlerDependencies {
+export interface MessageHandlerDependencies {
     userId: string;
     messages: readonly ThreadMessageLike[];
     setMessages: React.Dispatch<React.SetStateAction<readonly ThreadMessageLike[]>>;
@@ -22,24 +24,13 @@ export const createOnNew = (deps: MessageHandlerDependencies) => {
             throw new Error("Only text messages are supported");
         }
         const input = firstContent.text;
+        const isFirstMessage = deps.messages.length === 0;
 
         const userMessage = createUserMessage(input);
         deps.setMessages((prev) => [...prev, userMessage]);
 
         // Add thread to thread list if it doesn't exist there yet
-        deps.setThreadList((prev) => {
-            const exists = prev.some((t) => t.id === deps.currentThreadId);
-            if (exists) return prev;
-
-            return [
-                ...prev,
-                {
-                    id: deps.currentThreadId,
-                    status: "regular" as const,
-                    title: "New Chat",
-                },
-            ];
-        });
+        addThreadToListIfNotExists(deps.setThreadList, deps.currentThreadId);
 
         deps.setIsRunning(deps.currentThreadId, true);
         const assistantPlaceholder = createAssistantPlaceholder();
@@ -57,11 +48,14 @@ export const createOnNew = (deps: MessageHandlerDependencies) => {
                 setIsRunning: (running) => deps.setIsRunning(deps.currentThreadId, running),
                 signal: abortController.signal,
             });
+            if (isFirstMessage) {
+                await generateAndSetThreadTitle(input, deps);
+            }
         } finally {
             deps.cleanupController(deps.currentThreadId);
         }
     };
-};
+}
 
 export const createOnEdit = (deps: MessageHandlerDependencies) => {
     return async (message: AppendMessage) => {

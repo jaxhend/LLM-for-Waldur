@@ -7,7 +7,6 @@ import {debugAllThreads, debugCurrentThread} from "@/lib/debug";
     Live LLM responses: http://localhost:3000/
     Features to be added:
     TODO: Read the newly refactored code
-    TODO: thread renaming
 
     TODO: onCancel, onFeedback adapter (vt docs)
     TODO: view history button, view token usage button
