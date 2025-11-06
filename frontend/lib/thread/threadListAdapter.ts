@@ -2,6 +2,7 @@ import {ExternalStoreThreadData, ExternalStoreThreadListAdapter, ThreadMessageLi
 
 interface CreateThreadListAdapterParams {
     currentThreadId: string;
+    threads: Map<string, ThreadMessageLike[]>;
     threadList: ExternalStoreThreadData<"regular" | "archived">[];
     setThreadList: React.Dispatch<React.SetStateAction<ExternalStoreThreadData<"regular" | "archived">[]>>;
     setCurrentThreadId: (id: string) => void;
@@ -9,8 +10,26 @@ interface CreateThreadListAdapterParams {
     abortThreadStream: (threadId: string) => void;
 }
 
+const deleteEmptyThread = (
+    threads: Map<string, ThreadMessageLike[]>,
+    setThreads: React.Dispatch<React.SetStateAction<Map<string, ThreadMessageLike[]>>>,
+    currentThreadId: string) => {
+
+    threads.forEach((thread) => {
+        if (thread.length === 0) {
+            setThreads((prev) => {
+                const next = new Map(prev);
+                next.delete(currentThreadId);
+                return next;
+            });
+        }
+    })
+};
+
+
 export const createThreadListAdapter = ({
                                             currentThreadId,
+                                            threads,
                                             threadList,
                                             setThreadList,
                                             setCurrentThreadId,
@@ -27,14 +46,11 @@ export const createThreadListAdapter = ({
 
     onSwitchToNewThread: () => {
         const newId = crypto.randomUUID();
-        setThreadList((prev) => [
-            ...prev,
-            {
-                id: newId,
-                status: "regular" as const,
-                title: "New Chat",
-            },
-        ]);
+
+        // Remove current thread from if it has no messages
+        deleteEmptyThread(threads, setThreads, currentThreadId);
+
+        // A thread is added to thread list when a new message is added, so we only need to create a thread here
         setThreads((prev) => {
             const next = new Map(prev);
             next.set(newId, []);
@@ -44,6 +60,7 @@ export const createThreadListAdapter = ({
     },
 
     onSwitchToThread: (threadId) => {
+        deleteEmptyThread(threads, setThreads, currentThreadId);
         setCurrentThreadId(threadId);
     },
 
@@ -75,11 +92,6 @@ export const createThreadListAdapter = ({
                     next.set(newId, []);
                     return next;
                 });
-
-                setThreadList((prev) => [
-                    ...prev,
-                    {id: newId, status: "regular" as const, title: "New Chat"},
-                ]);
 
                 setCurrentThreadId(newId);
             }

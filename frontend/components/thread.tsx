@@ -36,12 +36,12 @@ export const Thread: FC = () => {
         <LazyMotion features={domAnimation}>
             <MotionConfig reducedMotion="user">
                 <ThreadPrimitive.Root
-                    className="aui-root aui-thread-root @container flex h-full flex-col bg-background"
+                    className="aui-root aui-thread-root @container flex h-full flex-col bg-background overflow-hidden"
                     style={{
                         ["--thread-max-width" as string]: "44rem",
                     }}
                 >
-                    <ThreadPrimitive.Viewport className="aui-thread-viewport relative flex flex-1 flex-col overflow-x-auto overflow-y-scroll px-4">
+                    <ThreadPrimitive.Viewport className="aui-thread-viewport relative flex flex-1 flex-col overflow-x-auto overflow-y-auto px-4">
                         <ThreadWelcome />
 
                         <ThreadPrimitive.Messages
@@ -52,8 +52,8 @@ export const Thread: FC = () => {
                             }}
                         />
                         <div className="aui-thread-viewport-spacer min-h-8 grow" />
-                        <Composer />
                     </ThreadPrimitive.Viewport>
+                    <Composer />
                 </ThreadPrimitive.Root>
             </MotionConfig>
         </LazyMotion>
@@ -154,7 +154,9 @@ const ThreadWelcomeSuggestions: FC = () => {
 
 const Composer: FC = () => {
     return (
-        <div className="aui-composer-wrapper sticky bottom-0 mx-auto flex w-full max-w-[var(--thread-max-width)] flex-col gap-4 overflow-visible rounded-t-3xl bg-background pb-4 md:pb-6">
+        <div className="aui-composer-wrapper relative bottom-0 mx-auto flex w-full max-w-[var(--thread-max-width)] flex-col gap-4 overflow-visible rounded-t-3xl bg-background pb-4 md:pb-6
+            before:absolute before:left-0 before:right-0 before:-top-16 before:h-16 before:pointer-events-none before:bg-gradient-to-t before:from-background before:to-transparent"
+        >
             <ThreadScrollToBottom />
             <ThreadPrimitive.Empty>
                 <ThreadWelcomeSuggestions />
@@ -163,7 +165,7 @@ const Composer: FC = () => {
                 {/*<ComposerAttachments />*/}
                 <ComposerPrimitive.Input
                     placeholder="Send a message..."
-                    className="aui-composer-input mb-1 max-h-20 min-h-10 w-full resize-none bg-transparent px-3.5 pt-1.5 pb-3 text-base outline-none placeholder:text-muted-foreground focus:outline-primary"
+                    className="aui-composer-input mb-1 max-h-30 min-h-10 w-full resize-none bg-transparent px-3.5 pt-1.5 pb-3 text-base outline-none placeholder:text-muted-foreground focus:outline-primary"
                     rows={1}
                     autoFocus
                     aria-label="Message input"
@@ -173,7 +175,6 @@ const Composer: FC = () => {
         </div>
     );
 };
-
 const ComposerAction: FC = () => {
     return (
         <div className="aui-composer-action-wrapper relative mx-1 mt-2 mb-2 flex items-center justify-between">

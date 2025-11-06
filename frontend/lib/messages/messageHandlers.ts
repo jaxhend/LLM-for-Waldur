@@ -1,4 +1,4 @@
-import {AppendMessage, ThreadMessageLike} from "@assistant-ui/react";
+import {AppendMessage, ExternalStoreThreadData, ThreadMessageLike} from "@assistant-ui/react";
 import {StartRunConfig} from "@/lib/types";
 import {createUserMessage, createAssistantPlaceholder} from "./messageFactories";
 import {addContext, addPreviousText} from "./messageUtils";
@@ -12,6 +12,7 @@ interface MessageHandlerDependencies {
     setIsRunning: (threadId: string, value: boolean | ((prev: boolean) => boolean)) => void;
     createController: (threadId: string) => AbortController;
     cleanupController: (threadId: string) => void;
+    setThreadList: React.Dispatch<React.SetStateAction<ExternalStoreThreadData<"regular" | "archived">[]>>;
 }
 
 export const createOnNew = (deps: MessageHandlerDependencies) => {
@@ -24,6 +25,21 @@ export const createOnNew = (deps: MessageHandlerDependencies) => {
 
         const userMessage = createUserMessage(input);
         deps.setMessages((prev) => [...prev, userMessage]);
+
+        // Add thread to thread list if it doesn't exist there yet
+        deps.setThreadList((prev) => {
+            const exists = prev.some((t) => t.id === deps.currentThreadId);
+            if (exists) return prev;
+
+            return [
+                ...prev,
+                {
+                    id: deps.currentThreadId,
+                    status: "regular" as const,
+                    title: "New Chat",
+                },
+            ];
+        });
 
         deps.setIsRunning(deps.currentThreadId, true);
         const assistantPlaceholder = createAssistantPlaceholder();

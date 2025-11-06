@@ -7,14 +7,12 @@ import {debugAllThreads, debugCurrentThread} from "@/lib/debug";
     Live LLM responses: http://localhost:3000/
     Features to be added:
     TODO: Read the newly refactored code
+    TODO: thread renaming
 
-    TODO: thread management - renaming, infinite new thread (should be scrollable)
     TODO: onCancel, onFeedback adapter (vt docs)
     TODO: view history button, view token usage button
-
-    TODO: autoscroll to bottom (like ChatGPT)
     TODO: userID to identify different users (kasutaja1, kasutaja2)
-    TODO: localstrorage persistence for threads and messages
+    TODO: localstorage persistence for threads and messages
     TODO: mock DB integration with threading, messages and user management
 
     Changes to revert:
@@ -44,7 +42,7 @@ export function ThreadRuntimeProvider({
 
     const [threadList, setThreadList] = useState<
         ExternalStoreThreadData<"regular" | "archived">[]
-    >([{id: currentThreadId, status: "regular", title: "New Chat"}]);
+    >([]);
 
     // Thread state management hooks
     const {getIsRunning, setIsRunning} = useThreadRunningState();
@@ -93,6 +91,7 @@ export function ThreadRuntimeProvider({
     // Thread list adapter
     const threadListAdapter = createThreadListAdapter({
         currentThreadId,
+        threads,
         threadList,
         setThreadList,
         setCurrentThreadId,
@@ -109,6 +108,7 @@ export function ThreadRuntimeProvider({
         setIsRunning,
         createController,
         cleanupController,
+        setThreadList,
     };
 
     // Message handlers
