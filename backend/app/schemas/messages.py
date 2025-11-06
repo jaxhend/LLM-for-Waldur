@@ -8,7 +8,7 @@ class MessageResponse(BaseModel):
     thread_id: int
     role: str
     content: str
-    dialogue_turn: int
+    conversation_turn: int
     created_at: datetime
 
     class Config:

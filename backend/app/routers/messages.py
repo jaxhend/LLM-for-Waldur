@@ -41,7 +41,7 @@ async def create_conversation_turn(
             thread_id=turn_data.thread_id,
             role="user",
             content=turn_data.user_message,
-            turn=turn_data.turn
+            conversation_turn=turn_data.conversation_turn
         )
 
         # Create assistant message
@@ -49,7 +49,7 @@ async def create_conversation_turn(
             thread_id=turn_data.thread_id,
             role="assistant",
             content=turn_data.assistant_response,
-            turn=turn_data.turn
+            conversation_turn=turn_data.conversation_turn
         )
 
         db.add(user_msg)
@@ -62,7 +62,7 @@ async def create_conversation_turn(
         logger.info(
             "thread_turn.created",
             thread_id=turn_data.thread_id,
-            turn=turn_data.turn,
+            conversation_turn=turn_data.conversation_turn,
             user_message_id=user_msg.id,
             assistant_message_id=assistant_response.id
         )

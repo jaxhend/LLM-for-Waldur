@@ -116,11 +116,11 @@ class RedisQueueRunnable(Runnable):
             thread_id = t.id
 
         q = await db.execute(
-            select(func.max(Messages.turn)).where(Messages.thread_id == thread_id)
+            select(func.max(Messages.conversation_turn)).where(Messages.thread_id == thread_id)
         )
-        max_dialogue_turn = q.scalar() or 0
-        next_dialogue_turn = max_dialogue_turn + 1
-        return thread_id, next_dialogue_turn
+        max_conversation_turn = q.scalar() or 0
+        next_conversation_turn = max_conversation_turn + 1
+        return thread_id, next_conversation_turn
 
     # ------------------- Async interfaces LangServe uses -------------------
     async def astream(self, input: str, config: Dict[str, Any] | None = None):
@@ -133,7 +133,7 @@ class RedisQueueRunnable(Runnable):
         db_gen = get_db()
         db = await anext(db_gen)
         try:
-            thread_id, dialogue_turn = await self.ensure_thread_and_turn(db, configurable)
+            thread_id, conversation_turn = await self.ensure_thread_and_turn(db, configurable)
 
             redis = get_redis()
             ctx_key = f"chat:ctx:{thread_id}"
@@ -192,15 +192,15 @@ class RedisQueueRunnable(Runnable):
             # 3) Save to DB after streaming completes
 
             try:
-                dialogue_turn_in = ConversationTurnCreate(
+                conversation_turn_in = ConversationTurnCreate(
                     thread_id=thread_id,
-                    dialogu_turn=dialogue_turn,
+                    conversation_turn=conversation_turn,
                     user_message=input,
                     assistant_response="".join(collected_response)
                 )
 
                 created_msgs = await create_conversation_turn(
-                    turn_data=dialogue_turn_in,
+                    turn_data=conversation_turn_in,
                     db=db
                 )
 
@@ -220,7 +220,7 @@ class RedisQueueRunnable(Runnable):
                         assistant_msg_id = msg.id
                         run_data = {
                             "thread_id": thread_id,
-                            "dialogue_turn": dialogue_turn,
+                            "conversation_turn": conversation_turn,
                             "model_name": model_name,
                             "input_tokens": input_tokens,
                             "output_tokens": output_tokens
@@ -229,7 +229,7 @@ class RedisQueueRunnable(Runnable):
                         runs.append(created_run)
                         break
 
-                logger.info("runs.created", thread_id=thread_id, dialogue_turn=dialogue_turn, job_id=job_id,
+                logger.info("runs.created", thread_id=thread_id, conversation_turn=conversation_turn, job_id=job_id,
                             run_ids=[run.id for run in runs]
                             )
 
@@ -247,16 +247,16 @@ class RedisQueueRunnable(Runnable):
                         additional_kwargs={
                             "event": "metadata",
                             "thread_id": thread_id,
-                            "dialogue_turn": dialogue_turn,
+                            "conversation_turn": conversation_turn,
                             "message_id": assistant_msg_id,
                         }
                     )
-                    logger.info("thread_turn.completed", thread_id=thread_id, dialogue_turn=dialogue_turn,
+                    logger.info("thread_turn.completed", thread_id=thread_id, conversation_turn=conversation_turn,
                                 assistant_message_id=assistant_msg_id)
 
             except Exception as e:
                 # Log error but don't fail the whole request if DB logging fails
-                logger.warning("runs.creation_failed", error=str(e), thread_id=thread_id, dialogue_turn=dialogue_turn,
+                logger.warning("runs.creation_failed", error=str(e), thread_id=thread_id, conversation_turn=conversation_turn,
                                job_id=job_id)
         finally:
             try:
