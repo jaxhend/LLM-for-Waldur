@@ -32,7 +32,6 @@ export const createOnNew = (deps: MessageHandlerDependencies) => {
         // Add thread to thread list if it doesn't exist there yet
         addThreadToListIfNotExists(deps.setThreadList, deps.currentThreadId);
 
-        deps.setIsRunning(deps.currentThreadId, true);
         const assistantPlaceholder = createAssistantPlaceholder();
         deps.setMessages((prev) => [...prev, assistantPlaceholder]);
 

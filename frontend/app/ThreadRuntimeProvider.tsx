@@ -14,6 +14,11 @@ import {debugAllThreads, debugCurrentThread} from "@/lib/debug";
     TODO: localstorage persistence for threads and messages
     TODO: mock DB integration with threading, messages and user management
 
+    TODO: connect with backend API
+        - retrieve threads for user, save new thread, update name or status (archived)
+        - save, update (edit, reload), abort messages
+        - feedback and token usage
+
     Changes to revert:
     - backend\app\main.py CORS settings
 */
