@@ -5,7 +5,7 @@ import {
     ErrorPrimitive,
     MessagePrimitive,
     ThreadPrimitive,
-    useAssistantState
+    useAssistantState, useMessage
 } from "@assistant-ui/react";
 import {
     ArrowDownIcon,
@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { LazyMotion, MotionConfig, domAnimation } from "motion/react";
 import * as m from "motion/react-m";
+import {LastUserMessageActions} from "@/components/LastUserMessageActions";
 
 export const Thread: FC = () => {
     return (
@@ -242,7 +243,7 @@ const AssistantMessage: FC = () => {
                 </div>
 
                 <div className="aui-assistant-message-footer mt-2 ml-2 flex">
-                    <BranchPicker />
+                    {/*<BranchPicker />*/}
                     <AssistantActionBar />
                 </div>
             </div>
@@ -271,15 +272,17 @@ const AssistantActionBar: FC = () => {
                         </MessagePrimitive.If>
                     </TooltipIconButton>
                 </ActionBarPrimitive.Copy>
-                <ActionBarPrimitive.Reload asChild>
-                    <TooltipIconButton tooltip="Refresh">
-                        <RefreshCwIcon />
-                    </TooltipIconButton>
-                </ActionBarPrimitive.Reload>
                 {/*<div className="flex justify-center items-center">*/}
                 {/*    <FeedbackButton />*/}
                 {/*    <FeedbackPanel threadMessages={threadMessages} user={"kasutaja"}/>*/}
                 {/*</div>*/}
+                <MessagePrimitive.If last>
+                    <ActionBarPrimitive.Reload asChild>
+                        <TooltipIconButton tooltip="Refresh">
+                            <RefreshCwIcon />
+                        </TooltipIconButton>
+                    </ActionBarPrimitive.Reload>
+                </MessagePrimitive.If>
             </ActionBarPrimitive.Root>
         </FeedbackProvider>
     );
@@ -303,24 +306,24 @@ const UserMessage: FC = () => {
                     </div>
                 </div>
 
-                <BranchPicker className="aui-user-branch-picker col-span-full col-start-1 row-start-3 -mr-1 justify-end" />
+                {/*<BranchPicker className="aui-user-branch-picker col-span-full col-start-1 row-start-3 -mr-1 justify-end" />*/}
             </div>
         </MessagePrimitive.Root>
     );
 };
 
 const UserActionBar: FC = () => {
+    const message = useMessage();
+
     return (
         <ActionBarPrimitive.Root
             hideWhenRunning
             autohide="not-last"
             className="aui-user-action-bar-root flex flex-col items-end"
         >
-            <ActionBarPrimitive.Edit asChild>
-                <TooltipIconButton tooltip="Edit" className="aui-user-action-edit p-4">
-                    <PencilIcon />
-                </TooltipIconButton>
-            </ActionBarPrimitive.Edit>
+            <MessagePrimitive.If user>
+                <LastUserMessageActions messageId={message.id} />
+            </MessagePrimitive.If>
         </ActionBarPrimitive.Root>
     );
 };
