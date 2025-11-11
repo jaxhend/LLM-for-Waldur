@@ -6,10 +6,8 @@ export async function parseAssistantStream({
                                                userId,
                                                assistantId,
                                                setMessages,
-                                               setIsRunning,
                                                signal,
                                            }: ParseAssistantStreamParams) {
-    setIsRunning(true);
     try {
         for await (const part of streamChat(contextInput, userId, signal)) {
             if (signal?.aborted) {
@@ -36,24 +34,48 @@ export async function parseAssistantStream({
                         ...m,
                         content: [{type: "text", text: newContent}],
                         metadata: newMetadata,
+                        status: {type: "running"} // For cancellation handling
                     };
                 })
             );
         }
-    } catch (error) {
-        const errorText =
-            error instanceof Error ? error.message : "An unknown error occurred";
+    } catch (error: unknown) {
+        const aborted = signal?.aborted;
+        const errorMessage =
+            aborted
+                ? "Assistant message was cancelled"
+                : error instanceof Error ? error.message
+                    : "An unknown error occurred";
+
+        const reason: "cancelled" | "error" = aborted ? "cancelled" : "error";
+
         setMessages((prev) =>
             prev.map((m) =>
                 m.id === assistantId
                     ? {
                         ...m,
-                        status: {type: "incomplete", reason: "error", error: errorText},
+                        status: {
+                            type: "incomplete",
+                            reason,
+                            error: errorMessage,
+                        },
                     }
                     : m
             )
         );
     } finally {
-        setIsRunning(false);
+        setMessages((prev) =>
+            prev.map((m) => {
+                if (m.id !== assistantId) return m;
+
+                // Don’t overwrite incomplete status
+                if (m.status?.type === "incomplete") return m;
+
+                return {
+                    ...m,
+                    status: { type: "complete", reason: "stop" },
+                };
+            })
+        );
     }
 }
