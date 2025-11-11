@@ -5,7 +5,8 @@ import {
     ErrorPrimitive,
     MessagePrimitive,
     ThreadPrimitive,
-    useAssistantState, useMessage
+    useAssistantState,
+    useMessage
 } from "@assistant-ui/react";
 import {
     ArrowDownIcon,

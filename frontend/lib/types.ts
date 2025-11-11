@@ -12,7 +12,6 @@ export interface ParseAssistantStreamParams {
     userId: string;
     assistantId: string;
     setMessages: React.Dispatch<React.SetStateAction<readonly ThreadMessageLike[]>>;
-    setIsRunning: React.Dispatch<React.SetStateAction<boolean>>;
     signal?: AbortSignal;
 }
 

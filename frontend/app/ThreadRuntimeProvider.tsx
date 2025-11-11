@@ -2,7 +2,7 @@
 
 {/*
     Features to be added:
-    TODO: onCancel, onFeedback adapter
+    TODO: onFeedback adapter
     TODO: localstorage persistence for threads and messages
     TODO: view history button, view token usage button
     TODO: userID to identify different users (kasutaja1, kasutaja2)
@@ -28,10 +28,13 @@ import {
     ThreadMessageLike,
     useExternalStoreRuntime,
 } from "@assistant-ui/react";
+import {
+    useAbortControllers,
+    useThreadRunningState
+} from "@/lib/thread/threadStateHooks";
 import {convertMessage} from "@/lib/messages/messageUtils";
-import {useAbortControllers, useThreadRunningState} from "@/lib/thread/threadStateHooks";
 import {createThreadListAdapter} from "@/lib/thread/threadListAdapter";
-import {createOnEdit, createOnNew, createOnReload} from "@/lib/messages/messageHandlers";
+import {createOnEdit, createOnNew, createOnReload, createOnCancel} from "@/lib/messages/messageHandlers";
 import {debugAllThreads} from "@/lib/debug";
 
 
@@ -102,17 +105,19 @@ export function ThreadRuntimeProvider({
         userId,
         messages,
         setMessages,
-        currentThreadId,
         setIsRunning,
+        currentThreadId,
+        setThreadList,
         createController,
         cleanupController,
-        setThreadList,
+        abortThread,
     };
 
     // Message handlers
     const onNew = createOnNew(handlerDeps);
     const onEdit = createOnEdit(handlerDeps);
     const onReload = createOnReload(handlerDeps);
+    const onCancel = createOnCancel(handlerDeps);
 
     // Runtime
     const runtime = useExternalStoreRuntime({
@@ -122,6 +127,7 @@ export function ThreadRuntimeProvider({
         onNew,
         onEdit,
         onReload,
+        onCancel,
         adapters: {
             threadList: threadListAdapter,
         },
