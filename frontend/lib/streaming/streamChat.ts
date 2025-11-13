@@ -36,7 +36,7 @@ export async function* streamChat(
                 if (line.startsWith("data: ")) {
                     try {
                         yield JSON.parse(line.slice(6));
-                    } catch (e) {
+                    } catch {
                         throw new Error("Failed to parse stream data");
                     }
                 }
@@ -47,7 +47,7 @@ export async function* streamChat(
         if (buffer.trim() && !signal?.aborted) {
             try {
                 yield JSON.parse(buffer.trim().replace(/^data: /, ""));
-            } catch (e) {
+            } catch {
                 // ignore incomplete buffer
             }
         }

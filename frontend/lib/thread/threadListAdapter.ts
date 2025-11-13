@@ -12,8 +12,8 @@ interface CreateThreadListAdapterParams {
 
 const deleteEmptyThread = (
     threads: Map<string, ThreadMessageLike[]>,
-    setThreads: React.Dispatch<React.SetStateAction<Map<string, ThreadMessageLike[]>>>,
-    currentThreadId: string) => {
+    setThreads: React.Dispatch<React.SetStateAction<Map<string, ThreadMessageLike[]>>>
+) => {
 
     threads.forEach((thread, threadId) => {
         if (thread.length === 0) {
@@ -67,7 +67,7 @@ export const createThreadListAdapter = ({
         const newId = crypto.randomUUID();
 
         // Remove current thread from if it has no messages
-        deleteEmptyThread(threads, setThreads, currentThreadId);
+        deleteEmptyThread(threads, setThreads);
 
         // A thread is added to thread list when a new message is added, so we only need to create a thread here
         setThreads((prev) => {
@@ -79,7 +79,7 @@ export const createThreadListAdapter = ({
     },
 
     onSwitchToThread: (threadId) => {
-        deleteEmptyThread(threads, setThreads, currentThreadId);
+        deleteEmptyThread(threads, setThreads);
         setCurrentThreadId(threadId);
     },
 

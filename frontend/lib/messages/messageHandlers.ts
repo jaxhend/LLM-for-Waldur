@@ -5,6 +5,7 @@ import {addContext, addPreviousText} from "./messageUtils";
 import {parseAssistantStream} from "@/lib/streaming/parseAssistantStream";
 import {addThreadToListIfNotExists} from "@/lib/thread/threadListAdapter";
 import {generateAndSetThreadTitle} from "@/lib/streaming/generateAndSetThreadTitle";
+import {extractTextFromMessageContent} from "@/lib/messages/messageUtils";
 
 export interface MessageHandlerDependencies {
     userId: string;
@@ -74,13 +75,10 @@ export const createOnEdit = (deps: MessageHandlerDependencies) => {
             if (userIndex === -1) return;
 
             const oldUser = deps.messages[userIndex];
-            const oldText = (oldUser.content[0] as any)?.text ?? "";
+            const oldText = extractTextFromMessageContent(oldUser.content);
 
             const oldAssistant = deps.messages[userIndex + 1];
-            const oldAssistantText =
-                oldAssistant?.role === "assistant"
-                    ? (oldAssistant.content[0] as any)?.text ?? ""
-                    : "";
+            const oldAssistantText= extractTextFromMessageContent(oldAssistant.content);
 
             const assistantIdToStream = oldAssistant?.id ?? "";
             if (!assistantIdToStream) return;
@@ -129,12 +127,12 @@ export const createOnReload = (deps: MessageHandlerDependencies) => {
             if (assistantIndex === -1) return;
 
             const oldAssistant = deps.messages[assistantIndex];
-            const oldAssistantText = (oldAssistant.content[0] as any)?.text ?? "";
+            const oldAssistantText = extractTextFromMessageContent(oldAssistant.content);
 
             const userIndex = assistantIndex - 1;
             if (userIndex < 0) return;
             const oldUser = deps.messages[userIndex];
-            const input = (oldUser.content[0] as any)?.text ?? "";
+            const input = extractTextFromMessageContent(oldUser.content);
 
             if (oldAssistant.role !== "assistant" || oldUser.role !== "user")
                 return;

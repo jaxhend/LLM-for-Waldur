@@ -10,7 +10,11 @@ type FeedbackContextType = {
     messageToRate: ThreadMessage | null;
     openPanel: (feedback: FeedbackAdapterFeedback) => void;
     closePanel: () => void;
-    sendFeedback: (...args: any) => Promise<void>;
+    sendFeedback: (
+        message: string,
+        rating: number,
+        threadMessages: readonly ThreadMessage[],
+    ) => Promise<void>;
 };
 
 const FeedbackContext = createContext<FeedbackContextType | undefined>(undefined);

@@ -36,7 +36,7 @@ export const addContext = (
         "easy-to-follow steps.\n";
     context += "This is the conversation history:\n";
     for (const message of contextMessages) {
-        const contentText = (message.content[0] as any)?.text ?? "";
+        const contentText = extractTextFromMessageContent(message.content);
         context += `${message.role}: ${contentText}\n`;
     }
 
@@ -47,3 +47,16 @@ export const addContext = (
 export const convertMessage = (message: ThreadMessageLike) => {
     return message;
 };
+
+
+export function extractTextFromMessageContent(content: ThreadMessageLike["content"]): string {
+    if (!Array.isArray(content) || content.length === 0) return "";
+
+    const first = content[0];
+
+    if (typeof first === "object" && first && first.type === "text" && typeof first.text === "string") {
+        return first.text;
+    }
+
+    return "";
+}
