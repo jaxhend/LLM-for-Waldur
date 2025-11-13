@@ -1,4 +1,4 @@
-import type { FC } from "react";
+import {FC} from "react";
 import {
   ThreadListItemPrimitive,
   ThreadListPrimitive,
@@ -7,22 +7,43 @@ import { ArchiveIcon, PlusIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { TooltipIconButton } from "@/components/tooltip-icon-button";
+import {useThreadContext} from "@/app/ThreadProvider";
 
 export const ThreadList: FC = () => {
-  return (
-    <ThreadListPrimitive.Root className="aui-root aui-thread-list-root flex flex-col items-stretch gap-1.5">
-      <ThreadListNew />
-      <ThreadListItems />
-    </ThreadListPrimitive.Root>
-  );
+    const {threads, currentThreadId} = useThreadContext();
+
+    // Starting condition: if there is exactly one thread and it is empty, treat as uninitialized
+    if (threads.size === 1 && threads.get(currentThreadId)?.length === 0) {
+        return (
+            <ThreadListPrimitive.Root
+                className="aui-root aui-thread-list-root flex flex-col items-stretch gap-1.5 overflow-y-hidden">
+                <ThreadListNew/>
+            </ThreadListPrimitive.Root>
+        );
+    }
+
+    return (
+        <ThreadListPrimitive.Root
+            className="aui-root aui-thread-list-root flex flex-col items-stretch gap-1.5 overflow-y-hidden">
+            <ThreadListNew/>
+            <ThreadListItems/>
+        </ThreadListPrimitive.Root>
+    );
 };
 
 const ThreadListNew: FC = () => {
-  return (
+    const {currentThreadId, threads} = useThreadContext();
+    if (!threads) return null; // Don't render anything until the data structure is available.
+
+    const currentThreadMessages = threads?.get(currentThreadId) ?? [];
+    const threadHasMessages = currentThreadMessages.length > 0;
+
+    return (
     <ThreadListPrimitive.New asChild>
       <Button
         className="aui-thread-list-new flex items-center justify-start gap-1 rounded-lg px-2.5 py-2 text-start hover:bg-muted data-active:bg-muted"
         variant="ghost"
+        disabled={!threadHasMessages}
       >
         <PlusIcon />
         New Thread
@@ -32,7 +53,11 @@ const ThreadListNew: FC = () => {
 };
 
 const ThreadListItems: FC = () => {
-  return <ThreadListPrimitive.Items components={{ ThreadListItem }} />;
+    return (
+        <div className="overflow-y-auto">
+            <ThreadListPrimitive.Items components={{ ThreadListItem }} />
+        </div>
+    );
 };
 
 const ThreadListItem: FC = () => {

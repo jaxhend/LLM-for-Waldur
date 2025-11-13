@@ -2,7 +2,9 @@ import "./globals.css";
 import type {Metadata} from "next";
 import type {ReactNode} from "react";
 import {Geist, Geist_Mono} from "next/font/google";
-import {CustomRuntimeProvider} from "@/app/CustomRuntimeProvider";
+import {ThreadProvider} from "@/app/ThreadProvider";
+import {ThreadRuntimeProvider} from "@/app/ThreadRuntimeProvider";
+import {FeedbackProvider} from "@/app/feedback-context";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -24,12 +26,18 @@ export default function RootLayout({
            }: Readonly<{
     children: ReactNode;
 }>) {
+    const userId = "kasutaja";
+
     return (
         <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
         <body>
-        <CustomRuntimeProvider mode="stream">
-            {children}
-        </CustomRuntimeProvider>
+        <FeedbackProvider>
+            <ThreadProvider>
+                <ThreadRuntimeProvider userId={userId}>
+                    {children}
+                </ThreadRuntimeProvider>
+            </ThreadProvider>
+        </FeedbackProvider>
         </body>
         </html>
     );
