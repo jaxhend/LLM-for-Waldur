@@ -4,8 +4,8 @@ from pydantic import BaseModel
 
 
 class RunBase(BaseModel):
-    thread_id: int
-    conversation_turn: int
+    thread_id: str
+    conversation_turn: str
     model_name: str
     input_tokens: int
     output_tokens: int
@@ -18,7 +18,7 @@ class RunCreate(RunBase):
 
 
 class RunRead(RunBase):
-    id: int
+    id: str
     created_at: datetime
 
     class Config:

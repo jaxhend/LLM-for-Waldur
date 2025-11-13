@@ -7,6 +7,7 @@ import {
     type ChatModelAdapter, ThreadUserMessagePart, ThreadMessage, ChatModelRunResult
 } from "@assistant-ui/react";
 
+
 type Mode = "stream" | "invoke";
 
 function makeAdapter(mode: Mode): ChatModelAdapter {
@@ -71,7 +72,7 @@ function makeAdapter(mode: Mode): ChatModelAdapter {
                     : "http://127.0.0.1:8000";
 
 
-            const THREAD_ID = 1;
+            const THREAD_ID = "1a9da122-5481-4261-bc3a-85aa4c60fa74"; // TODO: Change to dynamic thread ID for production
 
             // --------------- invoke (complete message) -------------------
             if (mode === "invoke") {

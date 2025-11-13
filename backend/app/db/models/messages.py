@@ -1,4 +1,5 @@
 import datetime
+import uuid
 
 from sqlalchemy import Integer, String, TIMESTAMP, ForeignKey, func
 from sqlalchemy.orm import mapped_column, Mapped, relationship
@@ -9,8 +10,8 @@ from ..base import Base
 class Messages(Base):
     __tablename__ = "messages"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    thread_id: Mapped[int] = mapped_column(Integer, ForeignKey("threads.id", ondelete="CASCADE"), nullable=False)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()) )
+    thread_id: Mapped[str] = mapped_column(String(36), ForeignKey("threads.id", ondelete="CASCADE"), nullable=False)
     role: Mapped[str] = mapped_column(String(50), nullable=False)
     content: Mapped[str] = mapped_column(String, nullable=False)
     conversation_turn: Mapped[int] = mapped_column(Integer, nullable=False)

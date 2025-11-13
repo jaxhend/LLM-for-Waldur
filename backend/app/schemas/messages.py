@@ -4,8 +4,8 @@ from pydantic import BaseModel, Field
 
 
 class MessageResponse(BaseModel):
-    id: int
-    thread_id: int
+    id: str
+    thread_id: str
     role: str
     content: str
     conversation_turn: int
@@ -17,14 +17,14 @@ class MessageResponse(BaseModel):
 
 class ConversationTurnCreate(BaseModel):
     """Schema for creating a complete turn (user + assistant messages)."""
-    thread_id: int
+    thread_id: str
     conversation_turn: int
     user_message: str
     assistant_response: str
 
 
 class MessageIdRole(BaseModel):
-    id: int
+    id: str
     role: str
 
     class Config:
