@@ -5,7 +5,7 @@ import {
     ErrorPrimitive,
     MessagePrimitive,
     ThreadPrimitive,
-    useAssistantState
+    useMessage
 } from "@assistant-ui/react";
 import {
     ArrowDownIcon,
@@ -14,34 +14,34 @@ import {
     ChevronLeftIcon,
     ChevronRightIcon,
     CopyIcon,
-    PencilIcon,
     RefreshCwIcon,
     Square,
+    MessageSquareText,
 } from "lucide-react";
-import {FeedbackProvider} from "@/components/feedback-context";
-import {FeedbackPanel} from "@/components/feedback-panel";
-import {FeedbackButton} from "@/components/ui/feedback-button";
-import type { FC } from "react";
-
-import { MarkdownText } from "@/components/markdown-text";
-import { ToolFallback } from "@/components/tool-fallback";
-import { TooltipIconButton } from "@/components/tooltip-icon-button";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { LazyMotion, MotionConfig, domAnimation } from "motion/react";
+import type {FC} from "react";
+import {MarkdownText} from "@/components/markdown-text";
+import {ToolFallback} from "@/components/tool-fallback";
+import {TooltipIconButton} from "@/components/tooltip-icon-button";
+import {Button} from "@/components/ui/button";
+import {cn} from "@/lib/utils";
+import {domAnimation, LazyMotion, MotionConfig} from "motion/react";
 import * as m from "motion/react-m";
+import {LastUserMessageActions} from "@/components/LastUserMessageActions";
+import {useThreadContext} from "@/app/ThreadProvider";
+import {FeedbackPanel} from "@/components/feedback-panel";
 
 export const Thread: FC = () => {
+    const { threads, currentThreadId } = useThreadContext();
     return (
         <LazyMotion features={domAnimation}>
             <MotionConfig reducedMotion="user">
                 <ThreadPrimitive.Root
-                    className="aui-root aui-thread-root @container flex h-full flex-col bg-background"
+                    className="aui-root aui-thread-root @container flex h-full flex-col bg-background overflow-hidden"
                     style={{
                         ["--thread-max-width" as string]: "44rem",
                     }}
                 >
-                    <ThreadPrimitive.Viewport className="aui-thread-viewport relative flex flex-1 flex-col overflow-x-auto overflow-y-scroll px-4">
+                    <ThreadPrimitive.Viewport className="aui-thread-viewport relative flex flex-1 flex-col overflow-x-auto overflow-y-auto px-4">
                         <ThreadWelcome />
 
                         <ThreadPrimitive.Messages
@@ -52,8 +52,11 @@ export const Thread: FC = () => {
                             }}
                         />
                         <div className="aui-thread-viewport-spacer min-h-8 grow" />
-                        <Composer />
                     </ThreadPrimitive.Viewport>
+                    <Composer />
+                    <FeedbackPanel
+                        threadMessages={threads.get(currentThreadId) || []}
+                    />
                 </ThreadPrimitive.Root>
             </MotionConfig>
         </LazyMotion>
@@ -154,7 +157,9 @@ const ThreadWelcomeSuggestions: FC = () => {
 
 const Composer: FC = () => {
     return (
-        <div className="aui-composer-wrapper sticky bottom-0 mx-auto flex w-full max-w-[var(--thread-max-width)] flex-col gap-4 overflow-visible rounded-t-3xl bg-background pb-4 md:pb-6">
+        <div className="aui-composer-wrapper relative bottom-0 mx-auto flex w-full max-w-[var(--thread-max-width)] flex-col gap-4 overflow-visible rounded-t-3xl bg-background pb-4 md:pb-6
+            before:absolute before:left-0 before:right-0 before:-top-16 before:h-16 before:pointer-events-none before:bg-gradient-to-t before:from-background before:to-transparent"
+        >
             <ThreadScrollToBottom />
             <ThreadPrimitive.Empty>
                 <ThreadWelcomeSuggestions />
@@ -163,7 +168,7 @@ const Composer: FC = () => {
                 {/*<ComposerAttachments />*/}
                 <ComposerPrimitive.Input
                     placeholder="Send a message..."
-                    className="aui-composer-input mb-1 max-h-32 min-h-16 w-full resize-none bg-transparent px-3.5 pt-1.5 pb-3 text-base outline-none placeholder:text-muted-foreground focus:outline-primary"
+                    className="aui-composer-input mb-1 max-h-32 min-h-8 w-full resize-none bg-transparent px-3.5 pt-1.5 pb-3 text-base outline-none placeholder:text-muted-foreground focus:outline-primary"
                     rows={1}
                     autoFocus
                     aria-label="Message input"
@@ -173,7 +178,6 @@ const Composer: FC = () => {
         </div>
     );
 };
-
 const ComposerAction: FC = () => {
     return (
         <div className="aui-composer-action-wrapper relative mx-1 mt-2 mb-2 flex items-center justify-between">
@@ -241,7 +245,7 @@ const AssistantMessage: FC = () => {
                 </div>
 
                 <div className="aui-assistant-message-footer mt-2 ml-2 flex">
-                    <BranchPicker />
+                    {/*<BranchPicker />*/}
                     <AssistantActionBar />
                 </div>
             </div>
@@ -250,37 +254,38 @@ const AssistantMessage: FC = () => {
 };
 
 const AssistantActionBar: FC = () => {
-    const threadMessages = useAssistantState(({ thread }) => thread.messages);
-
     return (
-        <FeedbackProvider>
-            <ActionBarPrimitive.Root
-                hideWhenRunning
-                autohide="not-last"
-                autohideFloat="single-branch"
-                className="aui-assistant-action-bar-root col-start-3 row-start-2 -ml-1 flex gap-1 text-muted-foreground data-floating:absolute data-floating:rounded-md data-floating:border data-floating:bg-background data-floating:p-1 data-floating:shadow-sm"
-            >
-                <ActionBarPrimitive.Copy asChild>
-                    <TooltipIconButton tooltip="Copy">
-                        <MessagePrimitive.If copied>
-                            <CheckIcon />
-                        </MessagePrimitive.If>
-                        <MessagePrimitive.If copied={false}>
-                            <CopyIcon />
-                        </MessagePrimitive.If>
-                    </TooltipIconButton>
-                </ActionBarPrimitive.Copy>
+        <ActionBarPrimitive.Root
+            hideWhenRunning
+            autohide="not-last"
+            autohideFloat="single-branch"
+            className="aui-assistant-action-bar-root col-start-3 row-start-2 -ml-1 flex gap-1 text-muted-foreground data-floating:absolute data-floating:rounded-md data-floating:border data-floating:bg-background data-floating:p-1 data-floating:shadow-sm"
+        >
+            <ActionBarPrimitive.Copy asChild>
+                <TooltipIconButton tooltip="Copy">
+                    <MessagePrimitive.If copied>
+                        <CheckIcon/>
+                    </MessagePrimitive.If>
+                    <MessagePrimitive.If copied={false}>
+                        <CopyIcon/>
+                    </MessagePrimitive.If>
+                </TooltipIconButton>
+            </ActionBarPrimitive.Copy>
+
+            <ActionBarPrimitive.FeedbackPositive asChild>
+                <TooltipIconButton tooltip="Feedback">
+                    <MessageSquareText/>
+                </TooltipIconButton>
+            </ActionBarPrimitive.FeedbackPositive>
+
+            <MessagePrimitive.If last>
                 <ActionBarPrimitive.Reload asChild>
                     <TooltipIconButton tooltip="Refresh">
-                        <RefreshCwIcon />
+                        <RefreshCwIcon/>
                     </TooltipIconButton>
                 </ActionBarPrimitive.Reload>
-                <div className="flex justify-center items-center">
-                    <FeedbackButton />
-                    <FeedbackPanel threadMessages={threadMessages} user={"kasutaja"}/>
-                </div>
-            </ActionBarPrimitive.Root>
-        </FeedbackProvider>
+            </MessagePrimitive.If>
+        </ActionBarPrimitive.Root>
     );
 };
 
@@ -302,24 +307,24 @@ const UserMessage: FC = () => {
                     </div>
                 </div>
 
-                <BranchPicker className="aui-user-branch-picker col-span-full col-start-1 row-start-3 -mr-1 justify-end" />
+                {/*<BranchPicker className="aui-user-branch-picker col-span-full col-start-1 row-start-3 -mr-1 justify-end" />*/}
             </div>
         </MessagePrimitive.Root>
     );
 };
 
 const UserActionBar: FC = () => {
+    const message = useMessage();
+
     return (
         <ActionBarPrimitive.Root
             hideWhenRunning
             autohide="not-last"
             className="aui-user-action-bar-root flex flex-col items-end"
         >
-            <ActionBarPrimitive.Edit asChild>
-                <TooltipIconButton tooltip="Edit" className="aui-user-action-edit p-4">
-                    <PencilIcon />
-                </TooltipIconButton>
-            </ActionBarPrimitive.Edit>
+            <MessagePrimitive.If user>
+                <LastUserMessageActions messageId={message.id} />
+            </MessagePrimitive.If>
         </ActionBarPrimitive.Root>
     );
 };

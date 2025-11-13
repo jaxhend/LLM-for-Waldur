@@ -1,7 +1,7 @@
 "use client";
 
 import { ThreadList } from "@/components/thread-list";
-import { Thread } from '@/components/thread'
+import { Thread } from '@/components/thread';
 
 export default function Page() {
     return (
