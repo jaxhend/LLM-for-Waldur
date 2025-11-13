@@ -168,7 +168,7 @@ const Composer: FC = () => {
                 {/*<ComposerAttachments />*/}
                 <ComposerPrimitive.Input
                     placeholder="Send a message..."
-                    className="aui-composer-input mb-1 max-h-30 min-h-10 w-full resize-none bg-transparent px-3.5 pt-1.5 pb-3 text-base outline-none placeholder:text-muted-foreground focus:outline-primary"
+                    className="aui-composer-input mb-1 max-h-32 min-h-8 w-full resize-none bg-transparent px-3.5 pt-1.5 pb-3 text-base outline-none placeholder:text-muted-foreground focus:outline-primary"
                     rows={1}
                     autoFocus
                     aria-label="Message input"
