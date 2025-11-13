@@ -1,22 +1,5 @@
 "use client";
 
-{/*
-    Features to be added:
-    TODO: localstorage persistence for threads and messages
-    TODO: view history button, view token usage button
-    TODO: userID to identify different users (kasutaja1, kasutaja2)
-    TODO: mock DB integration with threading, messages and user management
-
-    Backend integration:
-    TODO: connect with backend API
-        - retrieve threads for user, save new thread, update name or status (archived)
-        - save, update (edit, reload), abort messages
-        - feedback and token usage
-
-    Changes to revert:
-    - backend\app\main.py CORS settings
-*/
-}
 
 import {ReactNode, useEffect, useMemo, useState} from "react";
 import {
@@ -117,7 +100,7 @@ export function ThreadRuntimeProvider({
     const onCancel = createOnCancel(handlerDeps);
 
     // Feedback adapter
-    const {openPanel} = useFeedback()
+    const {openPanel} = useFeedback();
     const memoizedFeedbackAdapter = useMemo(
         () => feedbackAdapter(openPanel),
         [openPanel],

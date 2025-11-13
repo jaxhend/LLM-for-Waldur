@@ -15,11 +15,11 @@ const deleteEmptyThread = (
     setThreads: React.Dispatch<React.SetStateAction<Map<string, ThreadMessageLike[]>>>,
     currentThreadId: string) => {
 
-    threads.forEach((thread) => {
+    threads.forEach((thread, threadId) => {
         if (thread.length === 0) {
             setThreads((prev) => {
                 const next = new Map(prev);
-                next.delete(currentThreadId);
+                next.delete(threadId);
                 return next;
             });
         }

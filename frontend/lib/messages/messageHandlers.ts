@@ -1,4 +1,4 @@
-import {AppendMessage, ExternalStoreThreadData, ThreadMessageLike, useAssistantApi} from "@assistant-ui/react";
+import {AppendMessage, ExternalStoreThreadData, ThreadMessageLike} from "@assistant-ui/react";
 import {StartRunConfig} from "@/lib/types";
 import {createUserMessage, createAssistantPlaceholder} from "./messageFactories";
 import {addContext, addPreviousText} from "./messageUtils";
@@ -112,7 +112,7 @@ export const createOnEdit = (deps: MessageHandlerDependencies) => {
                 signal: abortController.signal,
             });
         } finally {
-            deps.setIsRunning(deps.currentThreadId, false)
+            deps.setIsRunning(deps.currentThreadId, false);
             deps.cleanupController(deps.currentThreadId);
         }
     };
