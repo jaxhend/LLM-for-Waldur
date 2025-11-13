@@ -2,7 +2,6 @@
 
 {/*
     Features to be added:
-    TODO: onFeedback adapter
     TODO: localstorage persistence for threads and messages
     TODO: view history button, view token usage button
     TODO: userID to identify different users (kasutaja1, kasutaja2)
@@ -19,23 +18,21 @@
 */
 }
 
-
-import {useThreadContext} from "@/app/ThreadProvider";
-import {ReactNode, useEffect, useState} from "react";
+import {ReactNode, useEffect, useMemo, useState} from "react";
 import {
     AssistantRuntimeProvider,
     ExternalStoreThreadData,
     ThreadMessageLike,
     useExternalStoreRuntime,
 } from "@assistant-ui/react";
-import {
-    useAbortControllers,
-    useThreadRunningState
-} from "@/lib/thread/threadStateHooks";
+import {feedbackAdapter} from "@/lib/feedback/feedback";
+import {useThreadContext} from "@/app/ThreadProvider";
+import {useAbortControllers, useThreadRunningState} from "@/lib/thread/threadStateHooks";
 import {convertMessage} from "@/lib/messages/messageUtils";
 import {createThreadListAdapter} from "@/lib/thread/threadListAdapter";
-import {createOnEdit, createOnNew, createOnReload, createOnCancel} from "@/lib/messages/messageHandlers";
+import {createOnCancel, createOnEdit, createOnNew, createOnReload} from "@/lib/messages/messageHandlers";
 import {debugAllThreads} from "@/lib/debug";
+import {useFeedback} from "@/app/feedback-context";
 
 
 export function ThreadRuntimeProvider({
@@ -119,6 +116,13 @@ export function ThreadRuntimeProvider({
     const onReload = createOnReload(handlerDeps);
     const onCancel = createOnCancel(handlerDeps);
 
+    // Feedback adapter
+    const {openPanel} = useFeedback()
+    const memoizedFeedbackAdapter = useMemo(
+        () => feedbackAdapter(openPanel),
+        [openPanel],
+    );
+
     // Runtime
     const runtime = useExternalStoreRuntime({
         isRunning,
@@ -130,6 +134,7 @@ export function ThreadRuntimeProvider({
         onCancel,
         adapters: {
             threadList: threadListAdapter,
+            feedback: memoizedFeedbackAdapter,
         },
     });
 

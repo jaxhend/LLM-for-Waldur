@@ -1,4 +1,5 @@
-import {ThreadMessageLike} from "@assistant-ui/react";
+import {ThreadMessage, ThreadMessageLike} from "@assistant-ui/react";
+
 
 export interface StreamChatChunk {
     content?: string;
@@ -23,4 +24,9 @@ export type StartRunConfig = {
     parentId: string | null;
     sourceId: string | null;
     runConfig: RunConfig;
+};
+
+export type FeedbackAdapterFeedback = {
+    message: ThreadMessage;
+    type: "positive" | "negative";
 };

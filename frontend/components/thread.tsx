@@ -5,7 +5,6 @@ import {
     ErrorPrimitive,
     MessagePrimitive,
     ThreadPrimitive,
-    useAssistantState,
     useMessage
 } from "@assistant-ui/react";
 import {
@@ -15,25 +14,24 @@ import {
     ChevronLeftIcon,
     ChevronRightIcon,
     CopyIcon,
-    PencilIcon,
     RefreshCwIcon,
     Square,
+    MessageSquareText,
 } from "lucide-react";
-import {FeedbackProvider} from "@/components/feedback-context";
-import {FeedbackPanel} from "@/components/feedback-panel";
-import {FeedbackButton} from "@/components/ui/feedback-button";
-import type { FC } from "react";
-
-import { MarkdownText } from "@/components/markdown-text";
-import { ToolFallback } from "@/components/tool-fallback";
-import { TooltipIconButton } from "@/components/tooltip-icon-button";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { LazyMotion, MotionConfig, domAnimation } from "motion/react";
+import type {FC} from "react";
+import {MarkdownText} from "@/components/markdown-text";
+import {ToolFallback} from "@/components/tool-fallback";
+import {TooltipIconButton} from "@/components/tooltip-icon-button";
+import {Button} from "@/components/ui/button";
+import {cn} from "@/lib/utils";
+import {domAnimation, LazyMotion, MotionConfig} from "motion/react";
 import * as m from "motion/react-m";
 import {LastUserMessageActions} from "@/components/LastUserMessageActions";
+import {useThreadContext} from "@/app/ThreadProvider";
+import {FeedbackPanel} from "@/components/feedback-panel";
 
 export const Thread: FC = () => {
+    const { threads, currentThreadId } = useThreadContext();
     return (
         <LazyMotion features={domAnimation}>
             <MotionConfig reducedMotion="user">
@@ -56,6 +54,9 @@ export const Thread: FC = () => {
                         <div className="aui-thread-viewport-spacer min-h-8 grow" />
                     </ThreadPrimitive.Viewport>
                     <Composer />
+                    <FeedbackPanel
+                        threadMessages={threads.get(currentThreadId) || []}
+                    />
                 </ThreadPrimitive.Root>
             </MotionConfig>
         </LazyMotion>
@@ -253,39 +254,38 @@ const AssistantMessage: FC = () => {
 };
 
 const AssistantActionBar: FC = () => {
-    const threadMessages = useAssistantState(({ thread }) => thread.messages);
-
     return (
-        <FeedbackProvider>
-            <ActionBarPrimitive.Root
-                hideWhenRunning
-                autohide="not-last"
-                autohideFloat="single-branch"
-                className="aui-assistant-action-bar-root col-start-3 row-start-2 -ml-1 flex gap-1 text-muted-foreground data-floating:absolute data-floating:rounded-md data-floating:border data-floating:bg-background data-floating:p-1 data-floating:shadow-sm"
-            >
-                <ActionBarPrimitive.Copy asChild>
-                    <TooltipIconButton tooltip="Copy">
-                        <MessagePrimitive.If copied>
-                            <CheckIcon />
-                        </MessagePrimitive.If>
-                        <MessagePrimitive.If copied={false}>
-                            <CopyIcon />
-                        </MessagePrimitive.If>
+        <ActionBarPrimitive.Root
+            hideWhenRunning
+            autohide="not-last"
+            autohideFloat="single-branch"
+            className="aui-assistant-action-bar-root col-start-3 row-start-2 -ml-1 flex gap-1 text-muted-foreground data-floating:absolute data-floating:rounded-md data-floating:border data-floating:bg-background data-floating:p-1 data-floating:shadow-sm"
+        >
+            <ActionBarPrimitive.Copy asChild>
+                <TooltipIconButton tooltip="Copy">
+                    <MessagePrimitive.If copied>
+                        <CheckIcon/>
+                    </MessagePrimitive.If>
+                    <MessagePrimitive.If copied={false}>
+                        <CopyIcon/>
+                    </MessagePrimitive.If>
+                </TooltipIconButton>
+            </ActionBarPrimitive.Copy>
+
+            <ActionBarPrimitive.FeedbackPositive asChild>
+                <TooltipIconButton tooltip="Feedback">
+                    <MessageSquareText/>
+                </TooltipIconButton>
+            </ActionBarPrimitive.FeedbackPositive>
+
+            <MessagePrimitive.If last>
+                <ActionBarPrimitive.Reload asChild>
+                    <TooltipIconButton tooltip="Refresh">
+                        <RefreshCwIcon/>
                     </TooltipIconButton>
-                </ActionBarPrimitive.Copy>
-                {/*<div className="flex justify-center items-center">*/}
-                {/*    <FeedbackButton />*/}
-                {/*    <FeedbackPanel threadMessages={threadMessages} user={"kasutaja"}/>*/}
-                {/*</div>*/}
-                <MessagePrimitive.If last>
-                    <ActionBarPrimitive.Reload asChild>
-                        <TooltipIconButton tooltip="Refresh">
-                            <RefreshCwIcon />
-                        </TooltipIconButton>
-                    </ActionBarPrimitive.Reload>
-                </MessagePrimitive.If>
-            </ActionBarPrimitive.Root>
-        </FeedbackProvider>
+                </ActionBarPrimitive.Reload>
+            </MessagePrimitive.If>
+        </ActionBarPrimitive.Root>
     );
 };
 
