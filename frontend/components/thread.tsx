@@ -1,6 +1,5 @@
 import {
     ActionBarPrimitive,
-    BranchPickerPrimitive,
     ComposerPrimitive,
     ErrorPrimitive,
     MessagePrimitive,
@@ -11,8 +10,6 @@ import {
     ArrowDownIcon,
     ArrowUpIcon,
     CheckIcon,
-    ChevronLeftIcon,
-    ChevronRightIcon,
     CopyIcon,
     RefreshCwIcon,
     Square,
@@ -23,7 +20,6 @@ import {MarkdownText} from "@/components/markdown-text";
 import {ToolFallback} from "@/components/tool-fallback";
 import {TooltipIconButton} from "@/components/tooltip-icon-button";
 import {Button} from "@/components/ui/button";
-import {cn} from "@/lib/utils";
 import {domAnimation, LazyMotion, MotionConfig} from "motion/react";
 import * as m from "motion/react-m";
 import {LastUserMessageActions} from "@/components/LastUserMessageActions";
@@ -355,10 +351,10 @@ const EditComposer: FC = () => {
     );
 };
 
-const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({
-                                                                className,
-                                                                ...rest
-                                                            }) => {
+/* const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({
+                                                                 className,
+                                                                 ...rest
+                                                             }) => {
     return (
         <BranchPickerPrimitive.Root
             hideWhenSingleBranch
@@ -370,17 +366,17 @@ const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({
         >
             <BranchPickerPrimitive.Previous asChild>
                 <TooltipIconButton tooltip="Previous">
-                    <ChevronLeftIcon />
+                    <ChevronLeftIcon/>
                 </TooltipIconButton>
             </BranchPickerPrimitive.Previous>
             <span className="aui-branch-picker-state font-medium">
-        <BranchPickerPrimitive.Number /> / <BranchPickerPrimitive.Count />
+        <BranchPickerPrimitive.Number/> / <BranchPickerPrimitive.Count/>
       </span>
             <BranchPickerPrimitive.Next asChild>
                 <TooltipIconButton tooltip="Next">
-                    <ChevronRightIcon />
+                    <ChevronRightIcon/>
                 </TooltipIconButton>
             </BranchPickerPrimitive.Next>
         </BranchPickerPrimitive.Root>
     );
-};
+};*/

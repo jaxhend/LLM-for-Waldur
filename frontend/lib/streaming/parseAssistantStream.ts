@@ -1,5 +1,6 @@
 import {ParseAssistantStreamParams} from "@/lib/types";
 import {streamChat} from "./streamChat";
+import {extractTextFromMessageContent} from "@/lib/messages/messageUtils";
 
 export async function parseAssistantStream({
                                                contextInput,
@@ -17,9 +18,10 @@ export async function parseAssistantStream({
             setMessages((prev) =>
                 prev.map((m) => {
                     if (m.id !== assistantId) return m;
+                    const existingText = extractTextFromMessageContent(m.content)
                     const newContent = part.content
-                        ? (m.content[0] as any).text + part.content
-                        : (m.content[0] as any).text;
+                        ? existingText + part.content
+                        : existingText;
                     const newMetadata = part.additional_kwargs?.usage_metadata
                         ? {
                             ...m.metadata,

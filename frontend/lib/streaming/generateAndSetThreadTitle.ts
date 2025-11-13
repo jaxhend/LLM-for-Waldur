@@ -39,7 +39,7 @@ export const generateAndSetThreadTitle = async (
                 )
             );
         }
-    } catch (e) {
+    } catch {
         deps.setThreadList((prev) =>
             prev.map((thread) =>
                 thread.id === deps.currentThreadId

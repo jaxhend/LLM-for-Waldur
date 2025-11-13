@@ -39,10 +39,7 @@ mermaid.initialize({ theme: "default"});
 export const MermaidDiagram: FC<MermaidDiagramProps> = ({
   code,
   className,
-  node: _node,
-  components: _components,
-  language: _language,
-}) => {
+  }) => {
   const ref = useRef<HTMLPreElement>(null);
 
   // Detect when this code block is complete

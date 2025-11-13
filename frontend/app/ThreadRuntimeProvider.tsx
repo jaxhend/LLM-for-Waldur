@@ -1,7 +1,7 @@
 "use client";
 
 
-import {ReactNode, useEffect, useMemo, useState} from "react";
+import {ReactNode, useMemo, useState} from "react";
 import {
     AssistantRuntimeProvider,
     ExternalStoreThreadData,
@@ -14,7 +14,6 @@ import {useAbortControllers, useThreadRunningState} from "@/lib/thread/threadSta
 import {convertMessage} from "@/lib/messages/messageUtils";
 import {createThreadListAdapter} from "@/lib/thread/threadListAdapter";
 import {createOnCancel, createOnEdit, createOnNew, createOnReload} from "@/lib/messages/messageHandlers";
-import {debugAllThreads} from "@/lib/debug";
 import {useFeedback} from "@/app/feedback-context";
 
 
@@ -35,13 +34,6 @@ export function ThreadRuntimeProvider({
     // Get current thread state
     const isRunning = getIsRunning(currentThreadId);
     const messages = threads.get(currentThreadId) ?? [];
-
-    // Debugging effects
-    if (process.env.NODE_ENV !== "production") {
-        useEffect(() => {
-            debugAllThreads(threads, threadList, currentThreadId);
-        }, [threads.size, currentThreadId]);
-    }
 
     // Messages setter for current thread
     const setMessages: React.Dispatch<React.SetStateAction<readonly ThreadMessageLike[]>> = (
