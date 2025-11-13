@@ -1,27 +1,30 @@
 "use client";
 
-import {FC, useState} from "react";
+import {FC, useEffect, useState} from "react";
 import {createPortal} from "react-dom";
-import {useFeedback} from "./feedback-context";
-import {ThreadMessage} from "@assistant-ui/react";
+import {useFeedback} from "@/app/feedback-context";
+import {ThreadMessage, ThreadMessageLike} from "@assistant-ui/react";
 
 interface FeedbackPanelProps {
-    threadMessages: readonly ThreadMessage[];
-    user: string;
-    messageId?: number;
+    threadMessages: readonly ThreadMessageLike[];
 }
 
-export const FeedbackPanel: FC<FeedbackPanelProps> = ({messageId}) => {
-    const {isOpen, closePanel, sendFeedback, isSending, activeMessageId} = useFeedback();
-    const [comment, setComment] = useState("");
+export const FeedbackPanel: FC<FeedbackPanelProps> = ({threadMessages}) => {
+    const {isOpen, isSending, closePanel, sendFeedback} = useFeedback();
+    const [message, setMessage] = useState("");
     const [rating, setRating] = useState<number | null>(null);
 
+    useEffect(() => {
+        if (isOpen) {
+            setMessage("");
+            setRating(null);
+        }
+    }, [isOpen]);
+
     const handleSubmit = async () => {
-        if (rating === null) return alert("Please select a rating");
-        const id = messageId ?? activeMessageId;
-        if (typeof id !== "number") return alert("No active message to send feedback for");
-        await sendFeedback(comment, rating, id);
-        setComment("");
+        if (rating === null) return
+        await sendFeedback(message, rating, threadMessages as ThreadMessage[]);
+        setMessage("");
         setRating(null);
     };
 
@@ -29,16 +32,13 @@ export const FeedbackPanel: FC<FeedbackPanelProps> = ({messageId}) => {
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-50">
-            {/* Overlay with smooth backdrop */}
             <div
                 className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-all"
                 onClick={closePanel}
             />
 
-            {/* Modal with entrance animation */}
             <div
                 className="relative bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl z-10 animate-in zoom-in-95 duration-200">
-                {/* Header */}
                 <div className="mb-6">
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">
                         Share your feedback
@@ -48,16 +48,14 @@ export const FeedbackPanel: FC<FeedbackPanelProps> = ({messageId}) => {
                     </p>
                 </div>
 
-                {/* Textarea */}
                 <textarea
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
                     placeholder="Tell us what you think..."
                     className="w-full p-4 border-2 border-gray-200 rounded-xl mb-6 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 resize-none transition-all placeholder:text-gray-400"
                     rows={4}
                 />
 
-                {/* Rating Section */}
                 <div className="mb-8">
                     <label className="block text-sm font-semibold text-gray-700 mb-3">
                         Rate your experience
@@ -83,7 +81,6 @@ export const FeedbackPanel: FC<FeedbackPanelProps> = ({messageId}) => {
                     </div>
                 </div>
 
-                {/* Action Buttons */}
                 <div className="flex gap-3">
                     <button
                         onClick={closePanel}
@@ -93,7 +90,7 @@ export const FeedbackPanel: FC<FeedbackPanelProps> = ({messageId}) => {
                     </button>
                     <button
                         onClick={handleSubmit}
-                        disabled={isSending || rating === null || comment.trim() === ""}
+                        disabled={isSending || rating === null || message.trim() === ""}
                         className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold px-5 py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-200"
                     >
                         {isSending ? (

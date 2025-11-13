@@ -4,6 +4,7 @@ import type {ReactNode} from "react";
 import {Geist, Geist_Mono} from "next/font/google";
 import {ThreadProvider} from "@/app/ThreadProvider";
 import {ThreadRuntimeProvider} from "@/app/ThreadRuntimeProvider";
+import {FeedbackProvider} from "@/app/feedback-context";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -30,11 +31,13 @@ export default function RootLayout({
     return (
         <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
         <body>
-        <ThreadProvider>
-            <ThreadRuntimeProvider userId={userId}>
-                {children}
-            </ThreadRuntimeProvider>
-        </ThreadProvider>
+        <FeedbackProvider>
+            <ThreadProvider>
+                <ThreadRuntimeProvider userId={userId}>
+                    {children}
+                </ThreadRuntimeProvider>
+            </ThreadProvider>
+        </FeedbackProvider>
         </body>
         </html>
     );
