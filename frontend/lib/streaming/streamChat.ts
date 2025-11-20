@@ -5,7 +5,7 @@ export async function* streamChat(
     userId: string,
     signal?: AbortSignal
 ): AsyncGenerator<StreamChatChunk> {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL
+    const apiUrl = process.env.NODE_ENV == "production" ? "https://llm.testing.waldur.com/" : "http://localhost:8000";
     const response = await fetch(`${apiUrl}/api/lc/chat/stream`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
