@@ -169,6 +169,7 @@ jobs:
           docker buildx build \
             --builder ${{ steps.buildx.outputs.name }} \
             -f deploy/images/Containerfile.frontend \
+            --build-arg NEXT_PUBLIC_API_URL=https://llm.testing.waldur.com \
             -t $FRONTEND_IMAGE:latest \
             -t $FRONTEND_IMAGE:$IMAGE_TAG \
             --push \

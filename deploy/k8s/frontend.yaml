@@ -30,11 +30,6 @@ spec:
                 secretKeyRef:
                   name: auth-secret
                   key: password
-            - name: NEXT_PUBLIC_API_URL
-              valueFrom:
-                  secretKeyRef:
-                      name: auth-secret
-                      key: api_url
       resources:
         requests:
           memory: "128Mi"
