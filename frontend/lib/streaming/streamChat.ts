@@ -5,7 +5,8 @@ export async function* streamChat(
     userId: string,
     signal?: AbortSignal
 ): AsyncGenerator<StreamChatChunk> {
-    const response = await fetch("https://llm.testing.waldur.com/api/lc/chat/stream", {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL
+    const response = await fetch(`${apiUrl}/api/lc/chat/stream`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({input, user_id: userId}),

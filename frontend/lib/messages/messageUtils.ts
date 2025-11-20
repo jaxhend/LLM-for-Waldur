@@ -24,10 +24,6 @@ export const addContext = (
     userInput: string,
     pastMessages: readonly ThreadMessageLike[]
 ): string => {
-    if (!pastMessages || pastMessages.length === 0) {
-        return userInput;
-    }
-
     const contextMessages = pastMessages.slice(-50);
     let context =
         "This is the system prompt: You are a highly knowledgeable and helpful support assistant for " +
