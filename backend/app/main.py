@@ -24,6 +24,7 @@ async def startup_event():
 
 origins = [
     "https://llm.testing.waldur.com/",
+    "http://localhost:8001",
 ]
 
 if settings.env != "production":
