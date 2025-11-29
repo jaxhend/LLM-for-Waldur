@@ -24,7 +24,6 @@ async def startup_event():
 
 origins = [
     "https://llm.testing.waldur.com/",
-    "http://localhost:8001",
 ]
 
 if settings.env != "production":
@@ -34,7 +33,7 @@ if settings.env != "production":
 app.add_middleware(RequestContextMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
