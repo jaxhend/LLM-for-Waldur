@@ -171,6 +171,9 @@ Dynamically scale Ollama worker pods based on Redis queue length.
 - Workers only run when needed
 - Preserves LangServe features (streaming, rate limits, token tracking)
 
+### More Information
+Original task can be found [here](https://github.com/jaxhend/LLM-for-Waldur/issues/9).
+
 ---
 
 ## Local Development
