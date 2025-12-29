@@ -5,7 +5,7 @@ The system is designed to efficiently handle concurrent LLM requests while optim
 
 ---
 
-## 🚀 Features
+## Features
 
 - Real-time LLM streaming (SSE)
 - Decoupled API & worker architecture
@@ -17,7 +17,7 @@ The system is designed to efficiently handle concurrent LLM requests while optim
 
 ---
 
-## 🧩 Architecture Overview
+## Architecture Overview
 ```text
 Frontend (Next.js)
    ↓
@@ -37,7 +37,7 @@ Frontend (Streaming)
 
 ---
 
-## 🖥️ Frontend
+## Frontend
 
 ### Stack
 - **Framework:** Next.js
@@ -54,7 +54,7 @@ The frontend uses a **custom LocalRuntime provider** via `CustomRuntimeProvider.
 
 ---
 
-## ⚙️ Backend
+## Backend
 
 ### Stack
 - Python
@@ -82,7 +82,7 @@ The frontend uses a **custom LocalRuntime provider** via `CustomRuntimeProvider.
 
 ---
 
-## 🔄 LangServe Request Flow
+## LangServe Request Flow
 
 1. Frontend sends request to:
    - `/api/lc/chat/invoke`
@@ -97,7 +97,7 @@ The frontend uses a **custom LocalRuntime provider** via `CustomRuntimeProvider.
 
 ---
 
-## 📊 Logging
+## Logging
 
 - Structured JSON logs using **structlog**
 - Includes:
@@ -111,14 +111,7 @@ The frontend uses a **custom LocalRuntime provider** via `CustomRuntimeProvider.
 
 ---
 
-## ❤️ Health Check
-```text
-GET /api/health
-```
-
----
-
-## 📦 Deployment
+## Deployment
 
 ### CI/CD – GitHub Actions
 
@@ -136,7 +129,7 @@ Only affected components are rebuilt and redeployed.
 
 ---
 
-### 🐳 Docker
+### Docker
 
 - Separate images for:
   - Backend
@@ -150,7 +143,7 @@ Only affected components are rebuilt and redeployed.
 
 ---
 
-### ☸️ Kubernetes
+### Kubernetes
 
 - Rolling restart after image push
 - `kubectl apply` for manifest changes
@@ -158,7 +151,7 @@ Only affected components are rebuilt and redeployed.
 
 ---
 
-## 📈 KEDA Autoscaling
+## KEDA Autoscaling
 
 ### Purpose
 Dynamically scale Ollama worker pods based on Redis queue length.
@@ -180,14 +173,7 @@ Dynamically scale Ollama worker pods based on Redis queue length.
 
 ---
 
-## 🔐 Required Secrets
-
-- `GHCR_TOKEN` – GitHub Container Registry access
-- `KUBECONFIG_CONTENT` – Kubernetes service account config
-
----
-
-## 🧪 Local Development
+## Local Development
 
 ### Backend
 ```bash
