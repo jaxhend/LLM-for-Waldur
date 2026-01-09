@@ -20,7 +20,7 @@ metadata:
 spec:
   scaleTargetRef:
     name: ollama
-  minReplicaCount: 0
+  minReplicaCount: 1 # constantly running
   maxReplicaCount: 2
   cooldownPeriod: 600
   triggers:
